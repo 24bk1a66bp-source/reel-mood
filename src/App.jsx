@@ -79,22 +79,33 @@ function HomePage() {
     const loadMovies = async () => {
   try {
 
-    const trendingData = await fetchTrendingMovies()
-    const topRatedData = await fetchTopRatedMovies()
-    const upcomingData = await fetchUpcomingMovies()
-    const popularData = await fetchPopularMovies()
-    const indianData = await fetchIndianMovies()
-    const koreanData = await fetchKoreanMovies()
-    const japaneseData = await fetchJapaneseMovies()
-    const animeData = await fetchAnimeMovies()
+    const [
+  trendingData,
+  topRatedData,
+  upcomingData,
+  popularData,
+  indianData,
+  koreanData,
+  japaneseData,
+  animeData,
+  featuredData
+] = await Promise.all([
+  fetchTrendingMovies(),
+  fetchTopRatedMovies(),
+  fetchUpcomingMovies(),
+  fetchPopularMovies(),
+  fetchIndianMovies(),
+  fetchKoreanMovies(),
+  fetchJapaneseMovies(),
+  fetchAnimeMovies(),
+  fetchFeaturedMovie()
+])
 
-    const featuredData = await fetchFeaturedMovie()
+let trailerData = null
 
-    let trailerData = null
-
-    if (featuredData?.id) {
-      trailerData = await fetchMovieTrailer(featuredData.id)
-    }
+if (featuredData?.id) {
+  trailerData = await fetchMovieTrailer(featuredData.id)
+}
 
     const usedIds = new Set()
 
