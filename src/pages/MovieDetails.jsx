@@ -90,8 +90,19 @@ setProviderLink(regionData?.link || "")
 
       {/* BACKDROP */}
       <div
-        className="relative h-[70vh] bg-cover bg-center"
+className="
+relative
+h-[70vh]
+md:h-[95vh]
+bg-cover
+bg-center
+bg-no-repeat
+"
         style={{
+            backgroundPosition:
+window.innerWidth < 768
+? "center top"
+: "center",
           backgroundImage:
             `url(https://image.tmdb.org/t/p/original${movie.backdrop_path})`,
         }}

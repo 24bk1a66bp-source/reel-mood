@@ -31,8 +31,78 @@ async function getData(url) {
 /* HOME */
 
 export const fetchTrendingMovies = async () => {
-  const data = await getData("/movie/now_playing")
-  return data.results
+
+const curatedIds = [
+
+980489, // Gran Turismo
+533535, // Deadpool & Wolverine
+912649, // Venom
+299536, // Avengers Infinity War
+299534, // Avengers Endgame
+634649, // Spider-Man No Way Home
+497698, // Black Widow
+
+];
+
+
+/* Indian + Telugu/Hindi/Tamil */
+
+const langs=["te","hi","ta","ml","kn"]
+
+let indian=[]
+
+for(const lang of langs){
+
+const data=
+await getData(
+`/discover/movie?with_original_language=${lang}&sort_by=vote_count.desc`
+)
+
+indian=[
+
+...indian,
+...data.results.slice(0,6)
+
+]
+
+}
+
+
+/* fetch curated */
+
+let curated=[]
+
+for(const id of curatedIds){
+
+const movie=
+await fetchMovieDetails(id)
+
+if(movie){
+
+curated.push(movie)
+
+}
+
+}
+
+
+const combined=[
+
+...indian,
+...curated
+
+]
+
+
+return combined
+.filter(movie=>
+
+movie.poster_path &&
+movie.backdrop_path
+
+)
+.sort(()=>Math.random()-0.5)
+
 }
 
 export const fetchTopRatedMovies = async () => {
@@ -45,11 +115,82 @@ export const fetchPopularMovies = async () => {
   return data.results
 }
 
-export const fetchUpcomingMovies = async () => {
-  const data = await getData("/movie/upcoming")
-  return data.results
+ export const fetchUpcomingMovies = async () => {
+
+const today=
+new Date()
+
+let indian=[]
+
+const langs=[
+"te",
+"hi",
+"ta",
+"ml",
+"kn"
+]
+
+for(const lang of langs){
+
+const data=
+await getData(
+
+`/discover/movie?with_original_language=${lang}&sort_by=popularity.desc`
+
+)
+
+const upcoming=
+
+data.results.filter(movie=>
+
+new Date(
+movie.release_date
+)>today
+
+)
+
+indian=[
+
+...indian,
+...upcoming
+
+]
+
 }
 
+
+const world=
+await getData(
+"/movie/upcoming"
+)
+
+
+const uniqueIndian=
+indian.filter(
+(movie,index,self)=>
+
+index===
+self.findIndex(
+m=>m.id===movie.id
+)
+
+)
+
+
+return [
+
+...uniqueIndian.slice(0,15),
+
+...world.results.slice(0,15)
+
+].filter(
+movie=>
+
+movie.poster_path
+
+)
+
+}
 
 /* GENRES */
 
