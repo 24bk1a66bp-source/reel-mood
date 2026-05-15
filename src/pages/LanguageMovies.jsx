@@ -16,6 +16,17 @@ const languageMap = {
   Anime: "ja",
 }
 
+const genreMap = {
+  All: "",
+  Action: 28,
+  Comedy: 35,
+  Romance: 10749,
+  Horror: 27,
+  Thriller: 53,
+  Drama: 18,
+}
+
+
 function LanguageMovies() {
 
   const { languageName } = useParams()
@@ -40,6 +51,15 @@ function LanguageMovies() {
 
   const [restored, setRestored] = useState(false)
   const [showTopButton, setShowTopButton] = useState(false)
+  const [selectedGenre, setSelectedGenre] = useState(() => {
+
+  return (
+    sessionStorage.getItem(
+      `filter-${window.location.pathname}`
+    ) || "All"
+  )
+
+})
 
 
   /* RESET WHEN LANGUAGE CHANGES */
@@ -98,9 +118,11 @@ function LanguageMovies() {
 
       for (let i = 1; i <= page; i++) {
 
-        const res = await fetch(
-          `https://api.themoviedb.org/3/discover/movie?api_key=9919aac47cec3e307e57789106fe5797&with_original_language=${languageCode}&sort_by=popularity.desc&page=${i}`
-        )
+         const genreId = genreMap[selectedGenre]
+
+         const res = await fetch(
+         `https://api.themoviedb.org/3/discover/movie?api_key=9919aac47cec3e307e57789106fe5797&with_original_language=${languageCode}&with_genres=${genreId}&sort_by=popularity.desc&page=${i}`
+            )
 
         const data = await res.json()
 
@@ -132,7 +154,7 @@ function LanguageMovies() {
 
     fetchLanguageMovies()
 
-  }, [languageName, page])
+   }, [languageName, page, selectedGenre])
 
 
   /* RESTORE SCROLL */
@@ -241,13 +263,55 @@ function LanguageMovies() {
 
         </div>
 
-        <Link to="/languages">
+         <div className="flex items-center gap-5">
 
-          <button className="px-7 py-3 bg-white text-black rounded-full font-semibold">
-            Back
-          </button>
+<select
+value={selectedGenre}
+onChange={(e)=>{
 
-        </Link>
+setMovies([])
+
+setPage(1)
+
+setSelectedGenre(e.target.value)
+
+sessionStorage.setItem(
+`filter-${location.pathname}`,
+e.target.value
+)
+
+}}
+className="
+bg-zinc-900
+border
+border-zinc-700
+px-6
+py-3
+rounded-full
+text-white
+outline-none
+"
+>
+
+{Object.keys(genreMap).map((genre)=>(
+
+<option key={genre}>
+{genre}
+</option>
+
+))}
+
+</select>
+
+<Link to="/languages">
+
+<button className="px-7 py-3 bg-white text-black rounded-full font-semibold">
+Back
+</button>
+
+</Link>
+
+</div>
 
       </div>
 

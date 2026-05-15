@@ -40,7 +40,7 @@ function HomePage() {
   const [isMuted, setIsMuted] = useState(true)
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [featuredTrailer, setFeaturedTrailer] = useState(null)
-
+  const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [searchResults, setSearchResults] = useState([])
 
@@ -293,49 +293,62 @@ if (featuredData?.id) {
 
           {/* NAVBAR */}
           <nav
-            ref={navRef}
-            className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-8 md:px-16 py-6 bg-black/30 backdrop-blur-md border-b border-white/10"
-          >
+  ref={navRef}
+  className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 md:px-16 py-4 bg-black/30 backdrop-blur-md border-b border-white/10"
+>
 
-            <h1 className="text-2xl md:text-3xl tracking-[0.35em] text-white font-semibold">
-              REELMOOD
-            </h1>
+  <h1 className="text-xl md:text-3xl tracking-[0.25em] text-white font-semibold">
+    REELMOOD
+  </h1>
 
-            <div className="flex items-center gap-10 text-sm md:text-base text-gray-200">
+  {/* Desktop nav */}
+  <div className="hidden md:flex items-center gap-10 text-sm text-gray-200">
 
-              <Link to="/">
-                <button className="hover:text-red-400 transition duration-300">
-                  Home
-                </button>
-              </Link>
+    <Link to="/">Home</Link>
 
-              <Link to="/genres">
-                <button className="hover:text-red-400 transition duration-300">
-                  Genres
-                </button>
-              </Link>
+    <Link to="/genres">Genres</Link>
 
-              <Link to="/languages">
+    <Link to="/languages">Languages</Link>
 
-  <button className="hover:text-red-400 transition duration-300">
-    Languages
+    <Link to="/moods">Moods</Link>
+
+  </div>
+
+  {/* Mobile hamburger */}
+  <button
+    onClick={() => setMenuOpen(!menuOpen)}
+    className="md:hidden text-3xl text-white"
+  >
+    ☰
   </button>
 
-</Link>
+</nav>
 
-              <Link to="/moods">
-                <button className="hover:text-red-400 transition duration-300">
-                  Moods
-                </button>
-              </Link>
+          {menuOpen && (
+  <div className="md:hidden fixed top-20 left-0 w-full bg-black/95 backdrop-blur-xl z-40 flex flex-col items-center py-8 gap-6">
 
-            </div>
+    <Link to="/" onClick={() => setMenuOpen(false)}>
+      Home
+    </Link>
 
-          </nav>
+    <Link to="/genres" onClick={() => setMenuOpen(false)}>
+      Genres
+    </Link>
+
+    <Link to="/languages" onClick={() => setMenuOpen(false)}>
+      Languages
+    </Link>
+
+    <Link to="/moods" onClick={() => setMenuOpen(false)}>
+      Moods
+    </Link>
+
+  </div>
+)}
 
 
           {/* HERO */}
-          <div className="min-h-screen flex items-center px-8 md:px-20 pt-24">
+          <div className="min-h-screen flex items-center px-4 md:px-20 pt-20">
 
             <div className="max-w-4xl">
 
@@ -345,7 +358,7 @@ if (featuredData?.id) {
 
               <h1
                 ref={titleRef}
-                className="text-6xl sm:text-7xl md:text-[9rem] leading-[0.9] drop-shadow-2xl"
+                className="text-4xl sm:text-6xl md:text-[9rem] leading-[0.95] drop-shadow-2xl"
                 style={{ fontFamily: "Anton" }}
               >
                 {featuredMovie?.title || "WATCH"}
@@ -353,7 +366,7 @@ if (featuredData?.id) {
 
               <p
   ref={subRef}
-  className="mt-8 text-gray-200 text-lg md:text-xl leading-relaxed max-w-2xl"
+  className="mt-6 text-gray-200 text-sm md:text-xl leading-relaxed max-w-2xl"
 >
   {featuredMovie?.overview ||
     "Discover movies tailored to your emotions."}
@@ -374,7 +387,7 @@ if (featuredData?.id) {
               {/* BUTTONS */}
                <div
   ref={buttonsRef}
-  className="flex flex-wrap items-center gap-5 mt-12"
+  className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-10"
 >
 
    <Link

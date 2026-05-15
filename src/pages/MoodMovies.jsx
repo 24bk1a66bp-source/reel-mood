@@ -3,7 +3,6 @@ import { ChevronUp } from "lucide-react"
 import { useParams, Link, useLocation } from "react-router-dom"
 
 const moodMap = {
-
   Dark: "53,80",
   Romantic: "10749,18",
   Horror: "27",
@@ -13,11 +12,9 @@ const moodMap = {
   Action: "28",
   Fantasy: "14",
   "Mind Blowing": "878,9648",
-
 }
 
 const moodStyles = {
-
   Dark: "from-black via-zinc-900 to-red-950",
   Romantic: "from-pink-950 via-rose-900 to-black",
   Horror: "from-black via-red-950 to-black",
@@ -27,355 +24,442 @@ const moodStyles = {
   Action: "from-zinc-900 via-red-900 to-black",
   Fantasy: "from-indigo-900 via-purple-900 to-black",
   "Mind Blowing": "from-cyan-900 via-blue-900 to-black",
+}
 
+const languageMap = {
+  all: "",
+  Telugu: "te",
+  Tamil: "ta",
+  Hindi: "hi",
+  Malayalam: "ml",
+  Kannada: "kn",
+  English: "en",
+  Korean: "ko",
+  Japanese: "ja",
 }
 
 function MoodMovies() {
 
   const { moodName } = useParams()
-
   const location = useLocation()
 
   const [movies, setMovies] = useState([])
-
-  const [page, setPage] = useState(() => {
-
-    const savedPage = sessionStorage.getItem(
-      `page-${window.location.pathname}`
-    )
-
-    return savedPage
-      ? parseInt(savedPage)
-      : 1
-
-  })
-
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
-
-  const [restored, setRestored] = useState(false)
-
   const [showTopButton, setShowTopButton] = useState(false)
+
+  const [selectedLanguage,
+setSelectedLanguage] =
+useState(()=>{
+
+return(
+
+sessionStorage.getItem(
+`filter-${window.location.pathname}`
+) || "all"
+
+)
+
+})
 
   const bgStyle =
     moodStyles[moodName] ||
     "from-black via-zinc-900 to-black"
 
-
-  /* RESET WHEN MOOD CHANGES */
   useEffect(() => {
 
     setMovies([])
+    setPage(1)
 
-    const savedPage = sessionStorage.getItem(
-      `page-${window.location.pathname}`
-    )
-
-    setPage(
-      savedPage
-        ? parseInt(savedPage)
-        : 1
-    )
-
-    setRestored(false)
-
-  }, [moodName])
+  }, [moodName, selectedLanguage])
 
 
   useEffect(() => {
 
-  const handleTopButton = () => {
+    const handleTopButton=()=>{
 
-    if (window.scrollY > 800) {
-
-      setShowTopButton(true)
-
-    } else {
-
-      setShowTopButton(false)
+      setShowTopButton(
+      window.scrollY > 800
+      )
 
     }
 
-  }
+    window.addEventListener(
+      "scroll",
+      handleTopButton
+    )
 
-  window.addEventListener("scroll", handleTopButton)
+    return ()=>window
+    .removeEventListener(
+      "scroll",
+      handleTopButton
+    )
 
-  return () =>
-    window.removeEventListener("scroll", handleTopButton)
-
-}, [])
+  },[])
 
 
-  /* FETCH MOVIES */
   useEffect(() => {
 
-    const fetchMoodMovies = async () => {
+    const fetchMovies=async()=>{
 
       setLoading(true)
 
-      const genreIds = moodMap[moodName]
+      try{
 
-      let allMovies = []
+      let allMovies=[]
 
-      for (let i = 1; i <= page; i++) {
+      const genreIds =
+      moodMap[moodName]
 
-        const res = await fetch(
-          `https://api.themoviedb.org/3/discover/movie?api_key=9919aac47cec3e307e57789106fe5797&with_genres=${genreIds}&page=${i}`
-        )
+      for(
+      let i=1;
+      i<=page;
+      i++
+      ){
 
-        const data = await res.json()
+const languageFilter=
+selectedLanguage!=="all"
+?`&with_original_language=${languageMap[selectedLanguage]}`
+:""
 
-        allMovies = [
+const res=
+await fetch(
 
-          ...allMovies,
+`https://api.themoviedb.org/3/discover/movie?api_key=9919aac47cec3e307e57789106fe5797&with_genres=${genreIds}${languageFilter}&page=${i}`
 
-          ...(data.results || []).filter(
-            (movie) => movie.poster_path
-          ),
+)
 
-        ]
+const data=
+await res.json()
 
-      }
+allMovies=[
 
-      const uniqueMovies = allMovies.filter(
-        (movie, index, self) =>
-          index ===
-          self.findIndex(
-            (m) => m.id === movie.id
-          )
-      )
+...allMovies,
 
-      setMovies(uniqueMovies)
+...(data.results||[])
+.filter(
+movie=>movie.poster_path
+)
 
-      setLoading(false)
+]
 
-    }
+}
 
-    fetchMoodMovies()
+const unique=
+allMovies.filter(
+(movie,index,self)=>
 
-  }, [moodName, page])
+index===
+self.findIndex(
+m=>m.id===movie.id
+)
 
+)
 
-  /* RESTORE SCROLL */
-  useEffect(() => {
+setMovies(unique)
 
-    if (movies.length > 0 && !restored) {
+}catch(err){
 
-      const savedScroll =
-        sessionStorage.getItem(location.pathname)
+console.log(err)
 
-      if (savedScroll) {
+}
 
-        setTimeout(() => {
+setLoading(false)
 
-          window.scrollTo({
-            top: parseInt(savedScroll),
-            behavior: "instant",
-          })
+}
 
-        }, 1200)
+fetchMovies()
 
-      }
+},[
+moodName,
+page,
+selectedLanguage
+])
 
-      setRestored(true)
 
-    }
+useEffect(()=>{
 
-  }, [movies, restored, location.pathname])
+const handleScroll=()=>{
 
+if(
 
-  /* SAVE SCROLL */
-  useEffect(() => {
+window.innerHeight+
+window.scrollY>=
+document.body.offsetHeight-1000
 
-    const saveScroll = () => {
+&& !loading
 
-      sessionStorage.setItem(
-        location.pathname,
-        window.scrollY
-      )
+){
 
-    }
+setPage(
+prev=>prev+1
+)
 
-    window.addEventListener("scroll", saveScroll)
+}
 
-    return () =>
-      window.removeEventListener("scroll", saveScroll)
+}
 
-  }, [location.pathname])
+window.addEventListener(
+"scroll",
+handleScroll
+)
 
+return()=>window
+.removeEventListener(
+"scroll",
+handleScroll
+)
 
-  /* INFINITE SCROLL */
-  useEffect(() => {
+},[loading])
 
-    const handleScroll = () => {
 
-      if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 1000 &&
-        !loading
-      ) {
+return(
 
-        setPage((prev) => {
+<div className={`min-h-screen text-white bg-gradient-to-br ${bgStyle}`}>
 
-          const nextPage = prev + 1
+<nav className="flex items-center justify-between px-4 md:px-16 py-6 border-b border-white/10">
 
-          sessionStorage.setItem(
-            `page-${location.pathname}`,
-            nextPage
-          )
+<Link to="/">
 
-          return nextPage
+<h1
+className="text-xl md:text-3xl tracking-[0.25em]"
+>
 
-        })
+REELMOOD
 
-      }
+</h1>
 
-    }
+</Link>
 
-    window.addEventListener("scroll", handleScroll)
+<Link to="/moods">
 
-    return () =>
-      window.removeEventListener("scroll", handleScroll)
+<button className="
+px-6 py-3
+bg-white
+text-black
+rounded-full
+">
 
-  }, [loading, location.pathname])
+Back
 
+</button>
 
-  return (
+</Link>
 
-    <div className={`min-h-screen text-white bg-gradient-to-br ${bgStyle}`}>
+</nav>
 
-      {/* NAVBAR */}
-      <nav className="flex items-center justify-between px-8 md:px-16 py-8 border-b border-white/10">
 
-        <Link to="/">
+<div className="px-4 md:px-16 py-10">
 
-          <h1 className="text-2xl md:text-3xl tracking-[0.35em] font-semibold">
-            REELMOOD
-          </h1>
+<h1
+className="text-5xl md:text-8xl mb-8"
+style={{
+fontFamily:"Anton"
+}}
+>
 
-        </Link>
+{moodName}
 
-        <Link to="/moods">
+</h1>
 
-          <button className="px-6 py-3 bg-white text-black rounded-full hover:scale-105 transition duration-300">
-            Back
-          </button>
+<div className="mb-10">
 
-        </Link>
+<select
+  value={selectedLanguage}
+  onChange={(e)=>{
 
-      </nav>
+setSelectedLanguage(
+e.target.value
+)
 
+sessionStorage.setItem(
+`filter-${location.pathname}`,
+e.target.value
+)
 
-      {/* HEADER */}
-      <div className="px-8 md:px-16 pt-16 pb-10">
+}}
 
-        <h1
-          className="text-6xl md:text-8xl font-black mb-6"
-          style={{ fontFamily: "Anton" }}
-        >
-          {moodName}
-        </h1>
+  className="
+  bg-zinc-900
+  text-white
+  px-5 py-3
+  rounded-2xl
+  border border-white/10
+  outline-none
+  shadow-lg
+  w-[180px]
+  hover:border-red-500
+  transition duration-300
+  "
+>
 
-        <p className="text-xl text-gray-300">
-          Movies curated for your current vibe.
-        </p>
+<option value="all">
+All Languages
+</option>
 
-      </div>
+<option value="Telugu">
+Telugu
+</option>
 
+<option value="Tamil">
+Tamil
+</option>
 
-      {/* MOVIES */}
-      <div className="px-8 md:px-16 pb-24">
+<option value="Hindi">
+Hindi
+</option>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+<option value="Malayalam">
+Malayalam
+</option>
 
-          {movies.map((movie, index) => (
+<option value="Kannada">
+Kannada
+</option>
 
-            <Link
-              to={`/movie/${movie.id}`}
-              state={{ from: `/mood/${moodName}` }}
-              key={`${movie.id}-${index}`}
-              className="group cursor-pointer"
-              onClick={() => {
+<option value="English">
+English
+</option>
 
-                sessionStorage.setItem(
-                  location.pathname,
-                  window.scrollY
-                )
+<option value="Korean">
+Korean
+</option>
 
-              }}
-            >
+<option value="Japanese">
+Japanese
+</option>
 
-              <div className="overflow-hidden rounded-3xl shadow-2xl">
+</select>
 
-                <img
-                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                  alt={movie.title}
-                  className="w-full h-[320px] object-cover group-hover:scale-110 transition duration-500"
-                />
+</div>
 
-              </div>
 
-              <h2 className="mt-4 text-lg font-semibold line-clamp-2">
-                {movie.title}
-              </h2>
+<div className="
+grid
+grid-cols-2
+md:grid-cols-5
+gap-4
+md:gap-8
+">
 
-              <p className="text-red-300 text-sm mt-1">
-                ⭐ {movie.vote_average?.toFixed(1)}
-              </p>
+{movies.map(
+(movie,index)=>(
 
-            </Link>
+<Link
+to={`/movie/${movie.id}`}
+key={`${movie.id}-${index}`}
+state={{
+from:
+`/mood/${moodName}`
+}}
+>
 
-          ))}
+<div className="
+overflow-hidden
+rounded-[1.5rem]
+">
 
-        </div>
+<img
+src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+alt={movie.title}
+className="
+w-full
+h-[240px]
+md:h-[350px]
+object-cover
+hover:scale-105
+transition
+duration-500
+"
+/>
 
-        {/* SCROLL TO TOP BUTTON */}
-{showTopButton && (
+</div>
 
-  <button
-    onClick={() => {
+<h2 className="
+mt-3
+text-sm
+md:text-lg
+font-bold
+line-clamp-2
+">
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      })
+{movie.title}
 
-    }}
-    className="
-      fixed bottom-8 right-8
-      w-14 h-14
-      rounded-full
-      bg-red-500 hover:bg-red-600
-      flex items-center justify-center
-      shadow-2xl
-      z-50
-      transition duration-300
-      hover:scale-110
-    "
-  >
+</h2>
 
-    <ChevronUp size={30} />
+<p className="
+text-red-300
+text-sm
+mt-1
+">
 
-  </button>
+⭐ {movie.vote_average?.toFixed(1)}
+
+</p>
+
+</Link>
+
+)
 
 )}
 
+</div>
 
-        {/* LOADING */}
-        {loading && (
+{showTopButton && (
 
-          <div className="text-center py-16 text-gray-400 text-xl">
+<button
 
-            Loading more movies...
+onClick={()=>
 
-          </div>
+window.scrollTo({
 
-        )}
+top:0,
+behavior:"smooth"
 
-      </div>
+})
 
-    </div>
+}
 
-  )
+className="
+fixed
+bottom-6
+right-6
+w-12
+h-12
+rounded-full
+bg-red-500
+flex
+items-center
+justify-center
+"
+
+>
+
+<ChevronUp/>
+
+</button>
+
+)}
+
+{loading&&(
+
+<div className="
+text-center
+py-10
+text-gray-300
+">
+
+Loading more movies...
+
+</div>
+
+)}
+
+</div>
+
+</div>
+
+)
 
 }
 

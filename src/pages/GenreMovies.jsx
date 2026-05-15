@@ -15,19 +15,47 @@ const genreMap = {
   Crime: 80,
 }
 
+const languageMap = {
+  all: "",
+  Telugu: "te",
+  Tamil: "ta",
+  Hindi: "hi",
+  Malayalam: "ml",
+  Kannada: "kn",
+  English: "en",
+  Korean: "ko",
+  Japanese: "ja",
+}
+
 function GenreMovies() {
 
   const { genreName } = useParams()
-
   const location = useLocation()
 
   const [movies, setMovies] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [restored, setRestored] = useState(false)
+  const [showTopButton, setShowTopButton] = useState(false)
+
+  const [selectedLanguage, setSelectedLanguage] =
+useState(() => {
+
+return (
+
+sessionStorage.getItem(
+`filter-${window.location.pathname}`
+) || "all"
+
+)
+
+})
 
   const [page, setPage] = useState(() => {
 
-    const savedPage = sessionStorage.getItem(
-      `page-${window.location.pathname}`
-    )
+    const savedPage =
+      sessionStorage.getItem(
+        `page-${window.location.pathname}`
+      )
 
     return savedPage
       ? parseInt(savedPage)
@@ -35,313 +63,372 @@ function GenreMovies() {
 
   })
 
-  const [loading, setLoading] = useState(false)
-
-  const [restored, setRestored] = useState(false)
-
-  const [showTopButton, setShowTopButton] = useState(false)
-
-
-  /* RESET WHEN GENRE CHANGES */
   useEffect(() => {
 
     setMovies([])
-
-    const savedPage = sessionStorage.getItem(
-      `page-${window.location.pathname}`
-    )
-
-    setPage(
-      savedPage
-        ? parseInt(savedPage)
-        : 1
-    )
-
+    setPage(1)
     setRestored(false)
 
-  }, [genreName])
+  }, [genreName, selectedLanguage])
+
 
   useEffect(() => {
 
-  const handleTopButton = () => {
+    const handleTopButton = () => {
 
-    if (window.scrollY > 800) {
-
-      setShowTopButton(true)
-
-    } else {
-
-      setShowTopButton(false)
+      setShowTopButton(
+        window.scrollY > 800
+      )
 
     }
 
-  }
+    window.addEventListener(
+      "scroll",
+      handleTopButton
+    )
 
-  window.addEventListener("scroll", handleTopButton)
+    return () =>
+      window.removeEventListener(
+        "scroll",
+        handleTopButton
+      )
 
-  return () =>
-    window.removeEventListener("scroll", handleTopButton)
-
-}, [])
+  }, [])
 
 
-  /* FETCH MOVIES */
   useEffect(() => {
 
-    const fetchGenreMovies = async () => {
+    const fetchMovies = async () => {
 
       setLoading(true)
 
-      const genreId = genreMap[genreName]
+      try {
 
-      let allMovies = []
+        const genreId =
+          genreMap[genreName]
 
-      for (let i = 1; i <= page; i++) {
+        let allMovies = []
 
-        const res = await fetch(
-          `https://api.themoviedb.org/3/discover/movie?api_key=9919aac47cec3e307e57789106fe5797&with_genres=${genreId}&page=${i}`
-        )
+        for (
+          let i = 1;
+          i <= page;
+          i++
+        ) {
 
-        const data = await res.json()
+          const languageFilter =
+            selectedLanguage !== "all"
+              ? `&with_original_language=${languageMap[selectedLanguage]}`
+              : ""
 
-        allMovies = [
+          const res =
+            await fetch(
 
-          ...allMovies,
+`https://api.themoviedb.org/3/discover/movie?api_key=9919aac47cec3e307e57789106fe5797&with_genres=${genreId}${languageFilter}&page=${i}`
 
-          ...(data.results || []).filter(
-            (movie) => movie.poster_path
-          ),
+            )
 
-        ]
+          const data =
+            await res.json()
+
+          allMovies = [
+
+            ...allMovies,
+
+            ...(data.results || [])
+              .filter(
+                movie =>
+                movie.poster_path
+              )
+
+          ]
+
+        }
+
+        const unique =
+          allMovies.filter(
+            (movie,index,self)=>
+
+index===self.findIndex(
+m=>m.id===movie.id
+)
+
+)
+
+        setMovies(unique)
+
+      } catch(err){
+
+        console.log(err)
 
       }
-
-      const uniqueMovies = allMovies.filter(
-        (movie, index, self) =>
-          index ===
-          self.findIndex(
-            (m) => m.id === movie.id
-          )
-      )
-
-      setMovies(uniqueMovies)
 
       setLoading(false)
 
     }
 
-    fetchGenreMovies()
+    fetchMovies()
 
-  }, [genreName, page])
-
-
-  /* RESTORE SCROLL */
-  useEffect(() => {
-
-    if (movies.length > 0 && !restored) {
-
-      const savedScroll =
-        sessionStorage.getItem(location.pathname)
-
-      if (savedScroll) {
-
-        setTimeout(() => {
-
-          window.scrollTo({
-            top: parseInt(savedScroll),
-            behavior: "instant",
-          })
-
-        }, 1200)
-
-      }
-
-      setRestored(true)
-
-    }
-
-  }, [movies, restored, location.pathname])
+  },[
+    genreName,
+    page,
+    selectedLanguage
+  ])
 
 
-  /* SAVE SCROLL */
-  useEffect(() => {
+  useEffect(()=>{
 
-    const saveScroll = () => {
+const handleScroll=()=>{
 
-      sessionStorage.setItem(
-        location.pathname,
-        window.scrollY
-      )
+if(
 
-    }
+window.innerHeight+
+window.scrollY>=
+document.body.offsetHeight-1000
 
-    window.addEventListener("scroll", saveScroll)
+&& !loading
 
-    return () =>
-      window.removeEventListener("scroll", saveScroll)
+){
 
-  }, [location.pathname])
+setPage(prev=>prev+1)
 
+}
 
-  /* INFINITE SCROLL */
-  useEffect(() => {
+}
 
-    const handleScroll = () => {
+window.addEventListener(
+"scroll",
+handleScroll
+)
 
-      if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 1000 &&
-        !loading
-      ) {
+return()=>window.removeEventListener(
+"scroll",
+handleScroll
+)
 
-        setPage((prev) => {
-
-          const nextPage = prev + 1
-
-          sessionStorage.setItem(
-            `page-${location.pathname}`,
-            nextPage
-          )
-
-          return nextPage
-
-        })
-
-      }
-
-    }
-
-    window.addEventListener("scroll", handleScroll)
-
-    return () =>
-      window.removeEventListener("scroll", handleScroll)
-
-  }, [loading, location.pathname])
+},[loading])
 
 
   return (
 
-    <div className="bg-black text-white min-h-screen px-8 md:px-16 py-12">
+<div className="bg-black text-white min-h-screen px-4 md:px-16 py-10">
 
-      {/* TOP */}
-      <div className="flex items-center justify-between mb-14">
+<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
 
-        <div>
+<div>
 
-          <p className="uppercase tracking-[0.4em] text-sm text-red-400 mb-4">
-            Explore Genre
-          </p>
+<p className="uppercase tracking-[0.35em] text-xs md:text-sm text-red-400 mb-4">
 
-          <h1
-            className="text-6xl md:text-[7rem] leading-none"
-            style={{ fontFamily: "Anton" }}
-          >
-            {genreName}
-          </h1>
+Explore Genre
 
-        </div>
+</p>
 
-        <Link to="/genres">
+<h1
+className="text-5xl md:text-[7rem]"
+style={{
+fontFamily:"Anton"
+}}
+>
 
-          <button className="px-7 py-3 bg-white text-black rounded-full font-semibold">
-            Back
-          </button>
+{genreName}
 
-        </Link>
+</h1>
 
-      </div>
+</div>
 
 
-      {/* MOVIES */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+<div className="flex gap-4 flex-wrap">
 
-        {movies.map((movie, index) => (
+<select
 
-          <Link
-            to={`/movie/${movie.id}`}
-            state={{ from: `/genre/${genreName}` }}
-            key={`${movie.id}-${index}`}
-            className="group cursor-pointer"
-            onClick={() => {
+value={selectedLanguage}
 
-              sessionStorage.setItem(
-                location.pathname,
-                window.scrollY
-              )
+onChange={(e)=>{
 
-            }}
-          >
+setSelectedLanguage(
+e.target.value
+)
 
-            <div className="overflow-hidden rounded-[2rem]">
+sessionStorage.setItem(
+`filter-${location.pathname}`,
+e.target.value
+)
 
-              <img
-                src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                alt={movie.title}
-                className="w-full h-[350px] object-cover group-hover:scale-105 transition duration-500"
-              />
+}}
 
-            </div>
+className="
+bg-zinc-900
+px-5 py-3
+rounded-full
+outline-none
+border
+border-white/10
+"
 
-            <h2 className="mt-4 text-xl font-bold line-clamp-2 leading-tight">
-              {movie.title}
-            </h2>
+>
 
-            <p className="text-red-400 mt-2">
-              ⭐ {movie.vote_average?.toFixed(1)}
-            </p>
+<option value="all">
+All Languages
+</option>
 
-          </Link>
+<option>Telugu</option>
+<option>Tamil</option>
+<option>Hindi</option>
+<option>Malayalam</option>
+<option>Kannada</option>
+<option>English</option>
+<option>Korean</option>
+<option>Japanese</option>
 
-        ))}
+</select>
 
-      </div>
+<Link to="/genres">
 
-      {/* SCROLL TO TOP BUTTON */}
+<button className="
+px-6 py-3
+bg-white
+text-black
+rounded-full
+font-semibold
+">
+
+Back
+
+</button>
+
+</Link>
+
+</div>
+
+</div>
+
+
+<div className="
+grid
+grid-cols-2
+md:grid-cols-5
+gap-4
+md:gap-8
+">
+
+{movies.map(
+(movie,index)=>(
+
+<Link
+to={`/movie/${movie.id}`}
+state={{
+from:
+`/genre/${genreName}`
+}}
+key={`${movie.id}-${index}`}
+className="group"
+>
+
+<div className="
+overflow-hidden
+rounded-[1.5rem]
+">
+
+<img
+src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+alt={movie.title}
+className="
+w-full
+h-[240px]
+md:h-[350px]
+object-cover
+group-hover:scale-105
+transition
+duration-500
+"
+/>
+
+</div>
+
+<h2 className="
+mt-3
+text-sm
+md:text-xl
+font-bold
+line-clamp-2
+">
+
+{movie.title}
+
+</h2>
+
+<p className="
+text-red-400
+text-sm
+mt-1
+">
+
+⭐ {movie.vote_average?.toFixed(1)}
+
+</p>
+
+</Link>
+
+)
+
+)}
+
+</div>
+
+
 {showTopButton && (
 
-  <button
-    onClick={() => {
+<button
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      })
+onClick={()=>{
 
-    }}
-    className="
-      fixed bottom-8 right-8
-      w-14 h-14
-      rounded-full
-      bg-red-500 hover:bg-red-600
-      flex items-center justify-center
-      shadow-2xl
-      z-50
-      transition duration-300
-      hover:scale-110
-    "
-  >
+window.scrollTo({
 
-    <ChevronUp size={30} />
+top:0,
+behavior:"smooth"
 
-  </button>
+})
+
+}}
+
+className="
+fixed
+bottom-6
+right-6
+w-12 h-12
+rounded-full
+bg-red-500
+flex
+items-center
+justify-center
+z-50
+"
+
+>
+
+<ChevronUp/>
+
+</button>
 
 )}
 
 
-      {/* LOADING */}
-      {loading && (
+{loading && (
 
-        <div className="text-center py-16 text-gray-400 text-xl">
+<div className="
+text-center
+py-12
+text-gray-400
+">
 
-          Loading more movies...
+Loading more movies...
 
-        </div>
+</div>
 
-      )}
+)}
 
-    </div>
+</div>
 
-  )
+)
 
 }
 
