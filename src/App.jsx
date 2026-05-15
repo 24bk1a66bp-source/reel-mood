@@ -77,65 +77,55 @@ function HomePage() {
     gsap.killTweensOf("*")
 
     const loadMovies = async () => {
+  try {
 
-      const trendingData = await fetchTrendingMovies()
+    const trendingData = await fetchTrendingMovies()
+    const topRatedData = await fetchTopRatedMovies()
+    const upcomingData = await fetchUpcomingMovies()
+    const popularData = await fetchPopularMovies()
+    const indianData = await fetchIndianMovies()
+    const koreanData = await fetchKoreanMovies()
+    const japaneseData = await fetchJapaneseMovies()
+    const animeData = await fetchAnimeMovies()
 
-const topRatedData = await fetchTopRatedMovies()
+    const featuredData = await fetchFeaturedMovie()
 
-const upcomingData = await fetchUpcomingMovies()
+    let trailerData = null
 
-const popularData = await fetchPopularMovies()
-
-const indianData = await fetchIndianMovies()
-
-const koreanData = await fetchKoreanMovies()
-
-const japaneseData = await fetchJapaneseMovies()
-
-const animeData = await fetchAnimeMovies()
-const featuredData = await fetchFeaturedMovie()
-const trailerData = await fetchMovieTrailer(featuredData.id)
-
-      const usedIds = new Set()
-
-const removeDuplicates = (movies) => {
-
-  return movies.filter((movie) => {
-
-    if (
-      usedIds.has(movie.id) ||
-      !movie.poster_path
-    ) {
-      return false
+    if (featuredData?.id) {
+      trailerData = await fetchMovieTrailer(featuredData.id)
     }
 
-    usedIds.add(movie.id)
+    const usedIds = new Set()
 
-    return true
+    const removeDuplicates = (movies) => {
+      return (movies || []).filter((movie) => {
+        if (
+          usedIds.has(movie.id) ||
+          !movie.poster_path
+        ) return false
 
-  })
+        usedIds.add(movie.id)
+        return true
+      })
+    }
 
+    setTrending(removeDuplicates(trendingData))
+    setTopRated(removeDuplicates(topRatedData))
+    setUpcoming(removeDuplicates(upcomingData))
+    setPopular(removeDuplicates(popularData))
+    setIndianMovies(removeDuplicates(indianData))
+    setKoreanMovies(removeDuplicates(koreanData))
+    setJapaneseMovies(removeDuplicates(japaneseData))
+    setAnimeMovies(removeDuplicates(animeData))
+
+    setFeaturedMovie(featuredData)
+    setFeaturedTrailer(trailerData)
+
+  } catch (err) {
+    console.error("Movie loading failed:", err)
+  }
 }
-
-setTrending(removeDuplicates(trendingData))
-
-setTopRated(removeDuplicates(topRatedData))
-
-setUpcoming(removeDuplicates(upcomingData))
-
-setPopular(removeDuplicates(popularData))
-
-setIndianMovies(removeDuplicates(indianData))
-
-setKoreanMovies(removeDuplicates(koreanData))
-
-setJapaneseMovies(removeDuplicates(japaneseData))
-
-setAnimeMovies(removeDuplicates(animeData))
-setFeaturedMovie(featuredData)
-setFeaturedTrailer(trailerData)
-
-    }
     
 
     loadMovies()

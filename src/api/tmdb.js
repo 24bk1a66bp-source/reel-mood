@@ -6,16 +6,19 @@ const BASE_URL = "https://api.themoviedb.org/3"
 
 
 
- export const fetchTrendingMovies = async () => {
+export const fetchTrendingMovies = async () => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/movie/now_playing?api_key=${API_KEY}`
+    )
 
-  const response = await axios.get(
-    `${BASE_URL}/movie/now_playing?api_key=${API_KEY}`
-  )
+    return response.data.results || []
 
-  return response.data.results
-
+  } catch (error) {
+    console.error("Trending movies error:", error)
+    return []
+  }
 }
-
 
 
 export const fetchTopRatedMovies = async () => {
