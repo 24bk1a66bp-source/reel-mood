@@ -346,7 +346,7 @@ md:gap-8
 (movie,index)=>(
 
 <Link
-to={`/movie/${movie.id}`}
+to={`/${movie.media_type || "movie"}/${movie.id}`}
 key={`${movie.id}-${index}`}
 state={{
 from:
@@ -361,7 +361,7 @@ rounded-[1.5rem]
 
 <img
 src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-alt={movie.title}
+alt={movie.title || movie.name}
 className="
 w-full
 h-[240px]
@@ -383,7 +383,7 @@ font-bold
 line-clamp-2
 ">
 
-{movie.title}
+{movie.title || movie.name}
 
 </h2>
 

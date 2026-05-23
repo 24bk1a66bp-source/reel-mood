@@ -21,7 +21,7 @@ function ScrollRestoration() {
           behavior: "instant",
         })
 
-      }, 100)
+      }, 1200)
 
     }
 

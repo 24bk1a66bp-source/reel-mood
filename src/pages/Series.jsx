@@ -3,13 +3,12 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { ChevronUp } from "lucide-react"
 
-function Movies() {
-  
+function Series() {
 
-  const [movies, setMovies] = useState(() => {
+  const [series, setSeries] = useState(() => {
 
 const saved =
-sessionStorage.getItem("moviesData")
+sessionStorage.getItem("seriesData")
 
 return saved
 ? JSON.parse(saved)
@@ -17,16 +16,16 @@ return saved
 
 })
   const [loading, setLoading] = useState(false)
-
-  const [activeFilter, setActiveFilter]  = useState(
-        sessionStorage.getItem("moviesFilter")
-||       "Trending"
-        )
-
   const [page, setPage] = useState(
 Number(
-sessionStorage.getItem("moviesPage")
+sessionStorage.getItem("seriesPage")
 ) || 1
+)
+
+  const [activeFilter, setActiveFilter] =
+useState(
+sessionStorage.getItem("seriesFilter")
+|| "Trending"
 )
 
   const [showTopButton, setShowTopButton] =
@@ -38,77 +37,101 @@ sessionStorage.getItem("moviesPage")
 
     "Action",
     "Comedy",
-    "Horror",
-    "Romance",
-    "Thriller",
-    "Sci-Fi",
     "Drama",
-    "Animation",
-    "Adventure",
-    "Fantasy",
     "Crime",
+    "Mystery",
+    "Sci-Fi",
+    "Animation",
 
     "English",
     "Hindi",
+    "Korean",
+    "Japanese",
+
     "Telugu",
     "Tamil",
     "Malayalam",
     "Kannada",
-    "Korean",
-    "Japanese"
+    "Spanish",
+    "Chinese",
+    "Thai",
+    "Turkish"
 
   ]
 
   const genreMap = {
 
-    Action: 28,
+    Action: 10759,
     Comedy: 35,
-    Horror: 27,
-    Romance: 10749,
-    Thriller: 53,
-    "Sci-Fi": 878,
-    Animation: 16,
     Drama: 18,
-    Adventure: 12,
-    Fantasy: 14,
     Crime: 80,
+    Mystery: 9648,
+    "Sci-Fi": 10765,
+    Animation: 16,
 
   }
 
   const languageMap = {
 
-    English: "en",
-    Hindi: "hi",
-    Telugu: "te",
-    Tamil: "ta",
-    Malayalam: "ml",
-    Kannada: "kn",
-    Korean: "ko",
-    Japanese: "ja",
+  English: "en",
+  Hindi: "hi",
+  Telugu: "te",
+  Tamil: "ta",
+  Malayalam: "ml",
+  Kannada: "kn",
+  Korean: "ko",
+  Japanese: "ja",
+  Spanish: "es",
+  Chinese: "zh",
+  Thai: "th",
+  Turkish: "tr",
 
-  }
-   useEffect(() => {
+}
+
+useEffect(() => {
+
+const savedScroll =
+sessionStorage.getItem(
+"scroll-series"
+)
+
+if(savedScroll){
+
+setTimeout(() => {
+
+window.scrollTo(
+0,
+parseInt(savedScroll)
+)
+
+}, 300)
+
+}
+
+}, [])
+
+useEffect(() => {
 
 sessionStorage.setItem(
-"moviesFilter",
+"seriesFilter",
 activeFilter
 )
 
 sessionStorage.setItem(
-"moviesPage",
+"seriesPage",
 page
 )
 
 sessionStorage.setItem(
-"moviesData",
-JSON.stringify(movies)
+"seriesData",
+JSON.stringify(series)
 )
 
-}, [activeFilter, page, movies])
+}, [activeFilter, page, series])
 
   useEffect(() => {
 
-    const fetchMovies = async () => {
+    const fetchSeries = async () => {
 
       setLoading(true)
 
@@ -116,27 +139,24 @@ JSON.stringify(movies)
 
         let url = ""
 
-        // TRENDING
-        if (activeFilter === "Trending") {
+        if(activeFilter === "Trending") {
 
           url =
-`https://api.themoviedb.org/3/trending/movie/week?api_key=9919aac47cec3e307e57789106fe5797&page=${page}`
+`https://api.themoviedb.org/3/trending/tv/week?api_key=9919aac47cec3e307e57789106fe5797&page=${page}`
 
         }
 
-        // GENRES
-        else if (genreMap[activeFilter]) {
+        else if(genreMap[activeFilter]) {
 
           url =
-`https://api.themoviedb.org/3/discover/movie?api_key=9919aac47cec3e307e57789106fe5797&with_genres=${genreMap[activeFilter]}&page=${page}`
+`https://api.themoviedb.org/3/discover/tv?api_key=9919aac47cec3e307e57789106fe5797&with_genres=${genreMap[activeFilter]}&page=${page}`
 
         }
 
-        // LANGUAGES
-        else if (languageMap[activeFilter]) {
+        else if(languageMap[activeFilter]) {
 
           url =
-`https://api.themoviedb.org/3/discover/movie?api_key=9919aac47cec3e307e57789106fe5797&with_original_language=${languageMap[activeFilter]}&page=${page}`
+`https://api.themoviedb.org/3/discover/tv?api_key=9919aac47cec3e307e57789106fe5797&with_original_language=${languageMap[activeFilter]}&page=${page}`
 
         }
 
@@ -144,31 +164,28 @@ JSON.stringify(movies)
 
         const data = await response.json()
 
-        const newMovies =
+        const newSeries =
           (data.results || []).filter(
-            movie =>
-              movie.poster_path &&
-              movie.title
+            item =>
+              item.poster_path &&
+              item.name
           )
 
-        setMovies(prev => {
+        setSeries(prev => {
 
           const combined = [
             ...prev,
-            ...newMovies
+            ...newSeries
           ]
 
-          const unique =
-            combined.filter(
-              (movie,index,self)=>
+          return combined.filter(
+            (item,index,self)=>
 
 index===self.findIndex(
-m=>m.id===movie.id
+m=>m.id===item.id
 )
 
-)
-
-          return unique
+          )
 
         })
 
@@ -182,14 +199,18 @@ m=>m.id===movie.id
 
     }
 
-    fetchMovies()
+    fetchSeries()
 
   }, [activeFilter, page])
 
-  // INFINITE SCROLL
   useEffect(() => {
 
     const handleScroll = () => {
+
+        sessionStorage.setItem(
+        "scroll-series",
+        window.scrollY
+        )
 
       if (
 
@@ -227,10 +248,8 @@ m=>m.id===movie.id
   return (
 
     <div className="bg-black text-white min-h-screen pt-28 overflow-x-hidden">
+        <Navbar />
 
-    <Navbar />
-
-      {/* BACKGROUND */}
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
@@ -239,36 +258,32 @@ m=>m.id===movie.id
         }}
       />
 
-      {/* OVERLAY */}
       <div className="absolute inset-0 bg-black/85" />
 
-      {/* RED GLOW */}
       <div className="absolute top-0 left-0 w-[300px] md:w-[700px] h-[300px] md:h-[700px] bg-red-700/20 blur-[120px] md:blur-[180px]" />
 
       <div className="relative z-10">
 
         
 
-        {/* HEADER */}
-        <div className="px-4 md:px-16 pt-10 md:pt-20">
+        <div className="px-8 md:px-16 pt-20">
 
           <p className="uppercase tracking-[0.4em] text-sm text-red-400 mb-6">
-            STREAM THE BEST CINEMA
+            BINGE THE BEST SHOWS
           </p>
 
           <h1
-            className="text-5xl md:text-[8rem] leading-[0.9]"
+            className="text-6xl md:text-[8rem] leading-[0.9]"
             style={{ fontFamily: "Anton" }}
           >
-            MOVIES
+            SERIES
           </h1>
 
         </div>
 
-        {/* FILTERS */}
-        <div className="px-4 md:px-16 mt-10 md:mt-16 overflow-x-auto no-scrollbar">
+        <div className="px-8 md:px-16 mt-16 overflow-x-auto no-scrollbar">
 
-          <div className="flex gap-3 md:gap-4 w-max pb-2">
+          <div className="flex gap-4 min-w-max pb-2">
 
             {filters.map((filter) => (
 
@@ -276,16 +291,19 @@ m=>m.id===movie.id
                 key={filter}
                 onClick={() => {
 
-setMovies([])
+                  setSeries([])
+
 sessionStorage.removeItem(
-"moviesData"
+"seriesData"
 )
+
 setPage(1)
+
 setActiveFilter(filter)
 
-}}
+                }}
                 className={`
-                  px-5 md:px-7 py-2 md:py-3
+                  px-7 py-3
                   rounded-full
                   border
                   transition
@@ -312,38 +330,27 @@ setActiveFilter(filter)
 
         </div>
 
-        {/* MOVIES GRID */}
-        <div className="px-4 md:px-16 py-12 md:py-20">
+        <div className="px-8 md:px-16 py-20">
 
-          <div className="
-          grid
-          grid-cols-2
-md:grid-cols-5
-gap-4
-md:gap-8
-          ">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-5 md:gap-8">
 
-            {movies.map((movie,index) => (
+            {series.map((show,index) => (
 
               <Link
-                to={`/movie/${movie.id}`}
-                 state={{ from: "/movies" }}
-                key={`${movie.id}-${index}`}
+  to={`/tv/${show.id}`}
+  state={{ from: "/series" }}
+                key={`${show.id}-${index}`}
                 className="group"
               >
 
-                <div className="
-                overflow-hidden
-                rounded-[1.5rem]
-                relative
-                ">
+                <div className="overflow-hidden rounded-[2rem] relative">
 
                   <img
-                    src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                    alt={movie.title}
+                    src={`https://image.tmdb.org/t/p/w500${show.poster_path}`}
+                    alt={show.name}
                     className="
                     w-full
-                    h-[220px]
+                    h-[260px]
                     md:h-[380px]
                     object-cover
                     group-hover:scale-105
@@ -352,46 +359,22 @@ md:gap-8
                     "
                   />
 
-                  <div className="
-                  absolute
-                  inset-0
-                  bg-black/0
-                  group-hover:bg-black/30
-                  transition
-                  duration-500
-                  " />
-
                 </div>
 
-                <h2 className="
-                mt-4
-                text-xs
-                md:text-xl
-                font-bold
-                line-clamp-2
-                ">
+                <h2 className="mt-4 text-sm md:text-xl font-bold line-clamp-2">
 
-                  {movie.title}
+                  {show.name}
 
                 </h2>
 
-                <div className="
-                flex
-                items-center
-                justify-between
-                mt-2
-                ">
+                <div className="flex items-center justify-between mt-2">
 
                   <p className="text-red-400">
-
-                    ⭐ {movie.vote_average?.toFixed(1)}
-
+                    ⭐ {show.vote_average?.toFixed(1)}
                   </p>
 
                   <p className="text-gray-400 text-sm">
-
-                    {movie.release_date?.split("-")[0]}
-
+                    {show.first_air_date?.split("-")[0]}
                   </p>
 
                 </div>
@@ -404,13 +387,9 @@ md:gap-8
 
           {loading && (
 
-            <div className="
-            text-center
-            py-12
-            text-gray-400
-            ">
+            <div className="text-center py-12 text-gray-400">
 
-              Loading more movies...
+              Loading more series...
 
             </div>
 
@@ -420,7 +399,6 @@ md:gap-8
 
       </div>
 
-      {/* TOP BUTTON */}
       {showTopButton && (
 
         <button
@@ -463,4 +441,4 @@ md:gap-8
 
 }
 
-export default Movies
+export default Series

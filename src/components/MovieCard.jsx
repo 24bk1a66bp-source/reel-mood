@@ -8,7 +8,7 @@ function MovieCard({ movie }) {
   return (
 
     <Link
-      to={`/movie/${movie.id}`}
+      to={`/${movie.media_type || "movie"}/${movie.id}`}
       className="group relative min-w-[220px] cursor-pointer transition duration-500 hover:scale-105"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -19,7 +19,7 @@ function MovieCard({ movie }) {
 
         <img
           src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-          alt={movie.title}
+          alt={movie.title || movie.name}
           className={`w-full h-[330px] object-cover transition duration-700 ${
             isHovered ? "scale-110 brightness-50" : ""
           }`}
@@ -44,7 +44,7 @@ function MovieCard({ movie }) {
       <div className="mt-4">
 
         <h2 className="text-xl font-bold line-clamp-2">
-          {movie.title}
+          {movie.title || movie.name}
         </h2>
 
         <div className="flex items-center gap-4 mt-2 text-gray-300">
@@ -54,7 +54,7 @@ function MovieCard({ movie }) {
           </p>
 
           <p>
-            {movie.release_date?.split("-")[0]}
+            {(movie.release_date || movie.first_air_date)?.split("-")[0]}
           </p>
 
         </div>

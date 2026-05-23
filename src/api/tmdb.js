@@ -32,162 +32,122 @@ async function getData(url) {
 
 export const fetchTrendingMovies = async () => {
 
-const curatedIds = [
+let movies = []
+let series = []
 
-980489, // Gran Turismo
-533535, // Deadpool & Wolverine
-912649, // Venom
-299536, // Avengers Infinity War
-299534, // Avengers Endgame
-634649, // Spider-Man No Way Home
-497698, // Black Widow
+for (let page = 1; page <= 5; page++) {
 
-];
-
-
-/* Indian + Telugu/Hindi/Tamil */
-
-const langs=["te","hi","ta","ml","kn"]
-
-let indian=[]
-
-for(const lang of langs){
-
-const data=
+const movieData =
 await getData(
-`/discover/movie?with_original_language=${lang}&sort_by=vote_count.desc`
+`/trending/movie/week?page=${page}`
 )
 
-indian=[
+const tvData =
+await getData(
+`/trending/tv/week?page=${page}`
+)
 
-...indian,
-...data.results.slice(0,6)
+movies = [
+...movies,
+...(movieData.results || []).map(item => ({
+...item,
+media_type: "movie"
+}))
+]
 
+series = [
+...series,
+...(tvData.results || []).map(item => ({
+...item,
+media_type: "tv"
+}))
 ]
 
 }
 
-
-/* fetch curated */
-
-let curated=[]
-
-for(const id of curatedIds){
-
-const movie=
-await fetchMovieDetails(id)
-
-if(movie){
-
-curated.push(movie)
-
-}
-
-}
-
-
-const combined=[
-
-...indian,
-...curated
-
+const combined = [
+...movies,
+...series
 ]
-
 
 return combined
-.filter(movie=>
-
-movie.poster_path &&
-movie.backdrop_path
-
-)
-.sort(()=>Math.random()-0.5)
+.filter(item => item && item.poster_path)
+.sort(() => Math.random() - 0.5)
 
 }
 
 export const fetchTopRatedMovies = async () => {
-  const data = await getData("/movie/top_rated")
-  return data.results
+
+let all = []
+
+for (let page = 1; page <= 5; page++) {
+
+const data = await getData(
+`/movie/top_rated?page=${page}`
+)
+
+all = [
+...all,
+...data.results
+]
+
 }
 
+return all
+
+}
+
+
 export const fetchPopularMovies = async () => {
-  const data = await getData("/movie/popular")
+
+let all = []
+
+for (let page = 1; page <= 5; page++) {
+
+const data = await getData(
+`/movie/popular?page=${page}`
+)
+
+all = [
+...all,
+...data.results
+]
+
+}
+
+return all
+
+}
+
+export const fetchPopularSeries = async () => {
+  const data = await getData("/tv/popular")
   return data.results
 }
 
  export const fetchUpcomingMovies = async () => {
 
-const today=
-new Date()
+let all = []
 
-let indian=[]
+for (let page = 1; page <= 10; page++) {
 
-const langs=[
-"te",
-"hi",
-"ta",
-"ml",
-"kn"
-]
-
-for(const lang of langs){
-
-const data=
-await getData(
-
-`/discover/movie?with_original_language=${lang}&sort_by=popularity.desc`
-
+const movieData = await getData(
+`/movie/upcoming?page=${page}`
 )
 
-const upcoming=
-
-data.results.filter(movie=>
-
-new Date(
-movie.release_date
-)>today
-
+const tvData = await getData(
+`/tv/on_the_air?page=${page}`
 )
 
-indian=[
-
-...indian,
-...upcoming
-
+all = [
+...all,
+...(movieData.results || []),
+...(tvData.results || [])
 ]
 
 }
 
-
-const world=
-await getData(
-"/movie/upcoming"
-)
-
-
-const uniqueIndian=
-indian.filter(
-(movie,index,self)=>
-
-index===
-self.findIndex(
-m=>m.id===movie.id
-)
-
-)
-
-
-return [
-
-...uniqueIndian.slice(0,15),
-
-...world.results.slice(0,15)
-
-].filter(
-movie=>
-
-movie.poster_path
-
+return all.filter(
+item => item.poster_path
 )
 
 }
@@ -226,11 +186,11 @@ export const fetchHorrorMovies = async () => {
 
 /* LANGUAGE */
 
-export const fetchIndianMovies = async()=>{
+export const fetchIndianMovies = async () => {
 
-let all=[]
+let all = []
 
-const langs=[
+const langs = [
 "hi",
 "te",
 "ta",
@@ -238,17 +198,20 @@ const langs=[
 "kn"
 ]
 
-for(const lang of langs){
+for (const lang of langs) {
 
-const data=
-await getData(
-`/discover/movie?with_original_language=${lang}&sort_by=popularity.desc`
+for (let page = 1; page <= 5; page++) {
+
+const data = await getData(
+`/discover/movie?with_original_language=${lang}&sort_by=popularity.desc&page=${page}`
 )
 
-all=[
+all = [
 ...all,
 ...data.results
 ]
+
+}
 
 }
 
@@ -260,58 +223,206 @@ return all
 
 export const fetchKoreanMovies=async()=>{
 
-const data=
-await getData(
-"/discover/movie?with_original_language=ko"
+let all = []
+
+for (let page = 1; page <= 5; page++) {
+
+const data = await getData(
+`/discover/movie?with_original_language=ko&page=${page}`
 )
 
-return data.results
+all = [
+...all,
+...data.results
+]
+
+}
+
+return all
+
+}
+
+ export const fetchJapaneseMovies = async () => {
+
+let all = []
+
+for (let page = 1; page <= 10; page++) {
+
+const movieData = await getData(
+`/discover/movie?with_original_language=ja&page=${page}`
+)
+
+const tvData = await getData(
+`/discover/tv?with_original_language=ja&page=${page}`
+)
+
+all = [
+...all,
+...(movieData.results || []),
+...(tvData.results || [])
+]
+
+}
+
+return all.filter(
+item => item.poster_path
+)
 
 }
 
 
-export const fetchJapaneseMovies=async()=>{
 
-const data=
-await getData(
-"/discover/movie?with_original_language=ja"
+ export const fetchAnimeMovies = async () => {
+
+let all = []
+
+for (let page = 1; page <= 10; page++) {
+
+const movieData = await getData(
+`/discover/movie?with_genres=16&page=${page}`
 )
 
-return data.results
+const tvData = await getData(
+`/discover/tv?with_genres=16&page=${page}`
+)
+
+all = [
+...all,
+...(movieData.results || []),
+...(tvData.results || [])
+]
 
 }
 
-
-
-export const fetchAnimeMovies=async()=>{
-
-const data=
-await getData(
-"/discover/movie?with_keywords=210024"
-)
-
-return data.results
+return all
+.filter(item => item.poster_path)
+.sort((a, b) => b.popularity - a.popularity)
 
 }
-
 
 
 /* SEARCH */
 
-export const searchMovies=async(query)=>{
+export const searchMovies = async (query) => {
 
-if(!query)
-return []
+try {
 
-const data=
-await getData(
-`/search/movie?query=${query}`
+const movieResponse = await axios.get(
+
+`${BASE_URL}/search/movie?api_key=${API_KEY}&query=${query}`
+
 )
 
-return data.results
+const tvResponse = await axios.get(
+
+`${BASE_URL}/search/tv?api_key=${API_KEY}&query=${query}`
+
+)
+
+const upcomingResponse = await axios.get(
+
+`${BASE_URL}/movie/upcoming?api_key=${API_KEY}`
+
+)
+
+const manualUpcoming = [
+
+{
+id: 999001,
+title: "Dragon",
+poster_path: "/9o0U5Lnq3Cz2K4Pjrr9xKx5jQxM.jpg",
+release_date: "2026-01-09",
+media_type: "movie"
+},
+
+{
+id: 999002,
+title: "Spirit",
+poster_path: "/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg",
+release_date: "2026-01-01",
+media_type: "movie"
+},
+
+{
+id: 999003,
+title: "Peddi",
+poster_path: "/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg",
+release_date: "2026-03-27",
+media_type: "movie"
+},
+
+{
+id: 999004,
+title: "Varanasi",
+poster_path: "/m9EtP1Yrzv6v7dMaC9mRaGhd1um.jpg",
+release_date: "2026-01-01",
+media_type: "movie"
+}
+
+]
+
+const combinedResults = [
+
+...(movieResponse.data.results || []),
+
+...(tvResponse.data.results || []),
+
+...(upcomingResponse.data.results || []),
+
+...manualUpcoming
+
+]
+
+const filteredResults = combinedResults.filter(
+
+(item) => {
+
+const title =
+(item.title || item.name || "")
+.toLowerCase()
+
+return title.includes(query.toLowerCase())
 
 }
 
+)
+
+filteredResults.sort((a, b) => {
+
+const aTitle =
+(a.title || a.name || "")
+.toLowerCase()
+
+const bTitle =
+(b.title || b.name || "")
+.toLowerCase()
+
+const queryLower =
+query.toLowerCase()
+
+if (aTitle === queryLower) return -1
+if (bTitle === queryLower) return 1
+
+if (aTitle.startsWith(queryLower)) return -1
+if (bTitle.startsWith(queryLower)) return 1
+
+return 0
+
+})
+
+return filteredResults
+
+}
+
+catch (error) {
+
+console.log("SEARCH ERROR:", error)
+
+return []
+
+}
+
+}
 
 
 /* FEATURED */
@@ -387,5 +498,18 @@ return trailer
 return null
 
 }
+
+}
+
+export const fetchOnlyMovies = async () => {
+
+const data =
+await getData(
+"/trending/movie/week"
+)
+
+return (data.results || []).filter(
+movie => movie.poster_path
+)
 
 }

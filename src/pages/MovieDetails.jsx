@@ -1,8 +1,8 @@
+import Navbar from "../components/Navbar"
 import { useEffect, useState } from "react"
 import {
   useParams,
   Link,
-  useLocation,
   useNavigate,
 } from "react-router-dom"
 
@@ -10,9 +10,7 @@ import axios from "axios"
 
 function MovieDetails() {
 
-  const { id } = useParams()
-
-  const location = useLocation()
+  const { id, type } = useParams()
 
   const navigate = useNavigate()
 
@@ -20,55 +18,182 @@ function MovieDetails() {
 
   const [trailer, setTrailer] = useState(null)
 
+  const [showTrailer, setShowTrailer] = useState(false)
+
   const [providers, setProviders] = useState([])
+
   const [providerLink, setProviderLink] = useState("")
 
-  useEffect(() => {
+  const [similar, setSimilar] = useState([])
 
-    const fetchMovie = async () => {
+  const contentTitle =
+movie?.title || movie?.name || ""
 
-      const response = await axios.get(
-        `https://api.themoviedb.org/3/movie/${id}?api_key=9919aac47cec3e307e57789106fe5797`
-      )
+ useEffect(() => {
 
-      setMovie(response.data)
+window.scrollTo(0, 0)
 
-      const videoResponse = await axios.get(
-        `https://api.themoviedb.org/3/movie/${id}/videos?api_key=9919aac47cec3e307e57789106fe5797`
-      )
+const fetchMovie = async () => {
 
-      const trailerData = videoResponse.data.results.find(
-        (video) =>
-          video.type === "Trailer" &&
-          video.site === "YouTube"
-      )
+  try {
 
-      setTrailer(trailerData)
+    const response = await axios.get(
+      `https://api.themoviedb.org/3/${type}/${id}?api_key=9919aac47cec3e307e57789106fe5797`
+    )
 
-      const providerResponse = await axios.get(
-        `https://api.themoviedb.org/3/movie/${id}/watch/providers?api_key=9919aac47cec3e307e57789106fe5797`
-      )
+    setMovie(response.data)
 
-      const results = providerResponse.data.results
+    const videoResponse = await axios.get(
+      `https://api.themoviedb.org/3/${type}/${id}/videos?api_key=9919aac47cec3e307e57789106fe5797`
+    )
 
-      const regionData =
-  results.IN ||
-  results.US ||
-  Object.values(results)[0]
+      const videos = videoResponse.data.results || []
 
-const providerData =
-  regionData?.flatrate ||
-  []
+const filteredVideos = videos.filter((video) => {
 
-setProviders(providerData)
+const name = video.name?.toLowerCase() || ""
 
-setProviderLink(regionData?.link || "")
+return (
 
-    }
+video.site === "YouTube" &&
+
+!name.includes("song") &&
+!name.includes("lyrical") &&
+!name.includes("audio") &&
+!name.includes("jukebox")
+
+)
+
+})
+
+const trailerData =
+
+filteredVideos.find(
+
+(video) =>
+
+video.type === "Trailer" &&
+video.name?.toLowerCase().includes("official")
+
+)
+
+||
+
+filteredVideos.find(
+
+(video) =>
+
+video.type === "Trailer"
+
+)
+
+||
+
+filteredVideos.find(
+
+(video) =>
+
+video.type === "Teaser"
+
+)
+
+||
+
+filteredVideos.find(
+
+(video) =>
+
+video.type === "Clip"
+
+)
+    setTrailer(trailerData)
+
+    const providerResponse = await axios.get(
+      `https://api.themoviedb.org/3/${type}/${id}/watch/providers?api_key=9919aac47cec3e307e57789106fe5797`
+    )
+
+    const results = providerResponse.data.results
+
+    const regionData =
+      results.IN ||
+      results.US ||
+      Object.values(results)[0]
+
+    const providerData =
+      regionData?.flatrate || []
+
+    setProviders(providerData)
+
+    setProviderLink(regionData?.link || "")
+
+    const similarResponse = await axios.get(
+`https://api.themoviedb.org/3/${type}/${id}/similar?api_key=9919aac47cec3e307e57789106fe5797`
+)
+
+let similarMovies =
+(similarResponse.data.results || []).filter(
+item => item.poster_path
+)
+
+if (similarMovies.length === 0) {
+
+const genreIds =
+response.data.genres
+.map(g => g.id)
+.join(",")
+
+const language =
+response.data.original_language
+
+const fallbackResponse = await axios.get(
+
+`https://api.themoviedb.org/3/discover/${type}?api_key=9919aac47cec3e307e57789106fe5797&with_genres=${genreIds}&with_original_language=${language}`
+
+)
+
+similarMovies =
+(fallbackResponse.data.results || [])
+.filter(
+item =>
+item.poster_path &&
+item.id !== response.data.id
+)
+
+if (similarMovies.length === 0) {
+
+const backupResponse = await axios.get(
+
+`https://api.themoviedb.org/3/discover/${type}?api_key=9919aac47cec3e307e57789106fe5797&with_original_language=${language}&sort_by=popularity.desc`
+
+)
+
+similarMovies =
+(backupResponse.data.results || [])
+.filter(
+item =>
+item.poster_path &&
+item.id !== response.data.id
+)
+
+}
+
+}
+
+setSimilar(
+similarMovies.slice(0, 12)
+)
+
+  } catch (err) {
+
+    console.log("DETAILS ERROR:", err)
+
+  }
+
+}
 
     fetchMovie()
 
-  }, [id])
+  }, [id, type])
 
   if (!movie) {
 
@@ -86,12 +211,15 @@ setProviderLink(regionData?.link || "")
 
   return (
 
-    <div className="bg-black text-white min-h-screen">
+    <div className="min-h-screen bg-black text-white">
+
+      <Navbar />
 
       {/* BACKDROP */}
       <div
 className="
 relative
+mt-20
 h-[70vh]
 md:h-[95vh]
 bg-cover
@@ -113,28 +241,7 @@ window.innerWidth < 768
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
 
-        {/* NAVBAR */}
-        <nav className="relative z-20 flex items-center justify-between px-8 md:px-16 py-8">
-
-          <Link to="/">
-
-            <h1 className="text-2xl md:text-3xl tracking-[0.35em] font-semibold">
-              REELMOOD
-            </h1>
-
-          </Link>
-
-
-          <button
-            onClick={() =>
-              navigate(location.state?.from || "/")
-            }
-            className="px-6 py-3 bg-white text-black rounded-full hover:scale-105 transition duration-300"
-          >
-            Back
-          </button>
-
-        </nav>
+        
 
 
         {/* MOVIE INFO */}
@@ -149,7 +256,7 @@ window.innerWidth < 768
                 wordBreak: "break-word",
               }}
             >
-              {movie.title}
+              {movie.title || movie.name}
             </h1>
 
             <p className="uppercase tracking-[0.4em] text-red-400 mb-5">
@@ -159,11 +266,11 @@ window.innerWidth < 768
             <div className="flex items-center gap-6 mt-6 text-lg text-gray-300">
 
               <p>
-                ⭐ {movie.vote_average.toFixed(1)}
+                ⭐ {movie.vote_average?.toFixed(1)}
               </p>
 
               <p>
-                {movie.release_date}
+                {movie.release_date || movie.first_air_date}
               </p>
 
             </div>
@@ -183,7 +290,7 @@ window.innerWidth < 768
 
           <img
             src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-            alt={movie.title}
+            alt={movie.title || movie.name}
             className="rounded-[2rem] w-full shadow-2xl"
           />
 
@@ -236,96 +343,96 @@ window.innerWidth < 768
 
   href={
   provider.provider_name.includes("Netflix")
-    ? `https://www.netflix.com/search?q=${movie.title}`
+    ? `https://www.netflix.com/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Amazon")
-    ? `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${movie.title}`
+    ? `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${contentTitle}`
 
     : provider.provider_name.includes("Disney")
-    ? `https://www.hotstar.com/in/search/query/${movie.title}`
+    ? `https://www.hotstar.com/in/search/query/${contentTitle}`
 
     : provider.provider_name.includes("Jio")
-    ? `https://www.jiocinema.com/search/${movie.title}`
+    ? `https://www.jiocinema.com/search/${contentTitle}`
 
     : provider.provider_name.includes("Zee5")
-    ? `https://www.zee5.com/search?q=${movie.title}`
+    ? `https://www.zee5.com/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Sony")
-    ? `https://www.sonyliv.com/search/${movie.title}`
+    ? `https://www.sonyliv.com/search/${contentTitle}`
 
     : provider.provider_name.includes("Sun NXT")
-    ? `https://www.sunnxt.com/search/${movie.title}`
+    ? `https://www.sunnxt.com/search/${contentTitle}`
 
     : provider.provider_name.includes("aha")
-    ? `https://www.aha.video/search?q=${movie.title}`
+    ? `https://www.aha.video/search?q=${contentTitle}`
 
     : provider.provider_name.includes("ETV Win")
-    ? `https://www.etvwin.com/search?q=${movie.title}`
+    ? `https://www.etvwin.com/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Lionsgate")
-    ? `https://www.lionsgateplay.com/search?q=${movie.title}`
+    ? `https://www.lionsgateplay.com/search?q=${contentTitle}`
 
     : provider.provider_name.includes("MX")
-    ? `https://www.mxplayer.in/search/${movie.title}`
+    ? `https://www.mxplayer.in/search/${contentTitle}`
 
     : provider.provider_name.includes("YouTube")
-    ? `https://www.youtube.com/results?search_query=${movie.title}`
+    ? `https://www.youtube.com/results?search_query=${contentTitle}`
 
     : provider.provider_name.includes("Apple")
-    ? `https://tv.apple.com/search?term=${movie.title}`
+    ? `https://tv.apple.com/search?term=${contentTitle}`
 
     : provider.provider_name.includes("Hulu")
-    ? `https://www.hulu.com/search?q=${movie.title}`
+    ? `https://www.hulu.com/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Crunchyroll")
-    ? `https://www.crunchyroll.com/search?q=${movie.title}`
+    ? `https://www.crunchyroll.com/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Peacock")
-    ? `https://www.peacocktv.com/search?q=${movie.title}`
+    ? `https://www.peacocktv.com/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Paramount")
-    ? `https://www.paramountplus.com/search/?query=${movie.title}`
+    ? `https://www.paramountplus.com/search/?query=${contentTitle}`
 
     : provider.provider_name.includes("Discovery")
-    ? `https://www.discoveryplus.in/search/${movie.title}`
+    ? `https://www.discoveryplus.in/search/${contentTitle}`
 
     : provider.provider_name.includes("MUBI")
-    ? `https://mubi.com/search/films?query=${movie.title}`
+    ? `https://mubi.com/search/films?query=${contentTitle}`
 
     : provider.provider_name.includes("Tubi")
-    ? `https://tubitv.com/search/${movie.title}`
+    ? `https://tubitv.com/search/${contentTitle}`
 
     : provider.provider_name.includes("Plex")
-    ? `https://watch.plex.tv/search?q=${movie.title}`
+    ? `https://watch.plex.tv/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Viu")
-    ? `https://www.viu.com/search?q=${movie.title}`
+    ? `https://www.viu.com/search?q=${contentTitle}`
 
     : provider.provider_name.includes("iQIYI")
-    ? `https://www.iq.com/search?query=${movie.title}`
+    ? `https://www.iq.com/search?query=${contentTitle}`
 
     : provider.provider_name.includes("Tencent")
-    ? `https://v.qq.com/x/search/?q=${movie.title}`
+    ? `https://v.qq.com/x/search/?q=${contentTitle}`
 
     : provider.provider_name.includes("WeTV")
-    ? `https://wetv.vip/search?q=${movie.title}`
+    ? `https://wetv.vip/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Rakuten")
-    ? `https://www.rakutenviki.com/search?q=${movie.title}`
+    ? `https://www.rakutenviki.com/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Viki")
-    ? `https://www.viki.com/search?q=${movie.title}`
+    ? `https://www.viki.com/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Hoichoi")
-    ? `https://www.hoichoi.tv/search?q=${movie.title}`
+    ? `https://www.hoichoi.tv/search?q=${contentTitle}`
 
     : provider.provider_name.includes("Google Play")
-    ? `https://play.google.com/store/search?q=${movie.title}&c=movies`
+    ? `https://play.google.com/store/search?q=${contentTitle}&c=movies`
 
     : provider.provider_name.includes("BookMyShow")
     ? `https://in.bookmyshow.com/explore/movies`
 
-    : `https://www.google.com/search?q=${movie.title}+watch+online`
+    : `https://www.google.com/search?q=${contentTitle}+watch+online`
 }
     
 
@@ -366,27 +473,64 @@ window.innerWidth < 768
           {/* BUTTONS */}
           <div className="flex flex-wrap gap-5 mt-12">
 
+            <button
+
+onClick={() => {
+
+if (trailer) {
+
+setShowTrailer(true)
+
+}
+
+else {
+
+window.open(
+
+`https://www.youtube.com/results?search_query=${contentTitle}+official+trailer`,
+
+"_blank"
+
+)
+
+}
+
+}}
+
+className={`
+px-8 py-4
+rounded-full
+font-semibold
+transition duration-300
+
+${trailer
+
+? `
+bg-white
+text-black
+hover:scale-105
+cursor-pointer
+`
+
+: `
+bg-zinc-800
+text-gray-500
+cursor-not-allowed
+`
+}
+
+`}
+
+>
+
+{trailer
+? "Watch Trailer"
+: "Search Trailer"}
+
+</button>
+
             <a
-              href={
-                trailer
-                  ? `https://www.youtube.com/watch?v=${trailer.key}`
-                  : "#"
-              }
-              target="_blank"
-              rel="noreferrer"
-            >
-
-              <button className="px-8 py-4 bg-white text-black rounded-full font-semibold hover:scale-105 transition duration-300">
-
-                Watch Trailer
-
-              </button>
-
-            </a>
-
-
-            <a
-              href={`https://www.google.com/search?q=${movie.title}+watch+online`}
+              href={`https://www.google.com/search?q=${contentTitle}+watch+online`}
               target="_blank"
               rel="noreferrer"
             >
@@ -398,6 +542,118 @@ window.innerWidth < 768
         </div>
 
       </div>
+      {/* SIMILAR */}
+<div className="px-8 md:px-16 pb-24">
+
+  <h2 className="text-4xl font-bold mb-10">
+
+    Similar {type === "tv" ? "Series" : "Movies"}
+
+  </h2>
+
+  <div className="flex gap-7 overflow-x-auto no-scrollbar pb-2">
+
+    {similar.map((item) => (
+
+      <Link
+to={`/${type}/${item.id}`}
+        key={item.id}
+        className="min-w-[220px] group"
+      >
+
+        <div className="overflow-hidden rounded-[2rem] relative">
+
+          <img
+            src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+            alt={item.title || item.name}
+            className="
+            w-full
+            h-[330px]
+            object-cover
+            group-hover:scale-105
+            transition
+            duration-500
+            "
+          />
+
+        </div>
+
+        <h3 className="mt-4 text-xl font-bold line-clamp-2">
+
+          {item.title || item.name}
+
+        </h3>
+
+        <div className="flex items-center justify-between mt-2">
+
+          <p className="text-red-400">
+
+            ⭐ {item.vote_average?.toFixed(1)}
+
+          </p>
+
+          <p className="text-gray-400 text-sm">
+
+            {(item.release_date || item.first_air_date)?.split("-")[0]}
+
+          </p>
+
+        </div>
+
+      </Link>
+
+    ))}
+
+  </div>
+
+</div>
+
+{/* TRAILER MODAL */}
+{showTrailer && trailer && (
+
+<div className="
+fixed inset-0
+bg-black/90
+z-[999]
+flex items-center justify-center
+p-4
+">
+
+<button
+onClick={() => setShowTrailer(false)}
+className="
+absolute top-6 right-6
+text-white text-4xl
+z-50
+"
+>
+
+✕
+
+</button>
+
+<div className="
+w-full
+max-w-6xl
+aspect-video
+rounded-[2rem]
+overflow-hidden
+shadow-2xl
+">
+
+<iframe
+className="w-full h-full"
+src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1`}
+title="Trailer"
+allow="autoplay; encrypted-media"
+allowFullScreen
+/>
+
+</div>
+
+</div>
+
+)}
 
     </div>
 

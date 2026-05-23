@@ -322,7 +322,7 @@ Back
         {movies.map((movie, index) => (
 
           <Link
-            to={`/movie/${movie.id}`}
+            to={`/${movie.media_type || "movie"}/${movie.id}`}
             state={{ from: `/language/${languageName}` }}
             key={`${movie.id}-${index}`}
             className="group cursor-pointer"
@@ -340,14 +340,14 @@ Back
 
               <img
                 src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                alt={movie.title}
+                alt={movie.title || movie.name}
                 className="w-full h-[350px] object-cover group-hover:scale-105 transition duration-500"
               />
 
             </div>
 
             <h2 className="mt-4 text-xl font-bold line-clamp-2 leading-tight">
-              {movie.title}
+              {movie.title || movie.name}
             </h2>
 
             <p className="text-red-400 mt-2">

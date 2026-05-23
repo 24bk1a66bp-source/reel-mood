@@ -1,3 +1,8 @@
+import IntroAnimation from "./components/IntroAnimation"
+import Navbar from "./components/Navbar"
+import { Volume2, VolumeX } from "lucide-react"
+import Movies from "./pages/Movies"
+import Series from "./pages/Series"
 import Languages from "./pages/Languages"
 import ScrollRestoration from "./components/ScrollRestoration"
 import LanguageMovies from "./pages/LanguageMovies"
@@ -103,25 +108,54 @@ function HomePage() {
 
 let trailerData = null
 
-if (featuredData?.id) {
-  trailerData = await fetchMovieTrailer(featuredData.id)
-}
-
-    const usedIds = new Set()
+ 
 
     const removeDuplicates = (movies) => {
-      return (movies || []).filter((movie) => {
-        if (
-          usedIds.has(movie.id) ||
-          !movie.poster_path
-        ) return false
 
-        usedIds.add(movie.id)
-        return true
-      })
-    }
+  const ids = new Set()
 
-    setTrending(removeDuplicates(trendingData))
+  return (movies || []).filter((movie) => {
+
+    if (
+      ids.has(movie.id) ||
+      !movie.poster_path
+    ) return false
+
+    ids.add(movie.id)
+
+    return true
+
+  })
+
+}
+    const mixedMovies = [
+
+...trendingData,
+...topRatedData,
+...upcomingData,
+...popularData,
+...indianData,
+...koreanData,
+...japaneseData,
+...animeData
+
+]
+
+const uniqueMixed = removeDuplicates(mixedMovies)
+
+const shuffled = uniqueMixed.sort(
+() => 0.5 - Math.random()
+)
+
+if (shuffled[0]?.id) {
+
+  trailerData = await fetchMovieTrailer(
+    shuffled[0].id
+  )
+
+}
+
+setTrending(shuffled)
     setTopRated(removeDuplicates(topRatedData))
     setUpcoming(removeDuplicates(upcomingData))
     setPopular(removeDuplicates(popularData))
@@ -130,7 +164,7 @@ if (featuredData?.id) {
     setJapaneseMovies(removeDuplicates(japaneseData))
     setAnimeMovies(removeDuplicates(animeData))
 
-    setFeaturedMovie(featuredData)
+    setFeaturedMovie(shuffled[0])
     setFeaturedTrailer(trailerData)
 
   } catch (err) {
@@ -228,9 +262,9 @@ if (featuredData?.id) {
 
       {movies
         .filter((movie) =>
-          movie.title
-            .toLowerCase()
-            .includes(search.toLowerCase())
+          (movie.title || movie.name || "")
+          .toLowerCase()
+          .includes(search.toLowerCase())
         )
         .map((movie) => (
 
@@ -252,15 +286,16 @@ if (featuredData?.id) {
 
     <div className="bg-black text-white min-h-screen overflow-x-hidden">
 
+      <Navbar />
+
       {/* HERO SECTION */}
-      <section className="relative min-h-screen overflow-hidden">
+      <section className="relative min-h-[75vh] md:min-h-screen overflow-hidden">
 
         {/* BACKGROUND */}
          {featuredTrailer ? (
 
   <iframe
-  key={isMuted}
-  className="absolute inset-0 w-full h-full scale-125 pointer-events-none opacity-100"
+   className="absolute inset-0 w-full h-full scale-125 pointer-events-none opacity-100"
   src={`https://www.youtube.com/embed/${featuredTrailer.key}?autoplay=1&mute=${isMuted ? 1 : 0}&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=${featuredTrailer.key}`}
   title="Trailer"
   allow="autoplay"
@@ -291,52 +326,19 @@ if (featuredData?.id) {
         {/* CONTENT */}
         <div className="relative z-20">
 
-          {/* NAVBAR */}
-          <nav
-  ref={navRef}
-  className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 md:px-16 py-4 bg-black/30 backdrop-blur-md border-b border-white/10"
->
-
-  <h1 className="text-xl md:text-3xl tracking-[0.25em] text-white font-semibold">
-    REELMOOD
-  </h1>
-
-  {/* Desktop nav */}
-  <div className="hidden md:flex items-center gap-10 text-sm text-gray-200">
-
-    <Link to="/">Home</Link>
-
-    <Link to="/genres">Genres</Link>
-
-    <Link to="/languages">Languages</Link>
-
-    <Link to="/moods">Moods</Link>
-
-  </div>
-
-  {/* Mobile hamburger */}
-  <button
-    onClick={() => setMenuOpen(!menuOpen)}
-    className="md:hidden text-3xl text-white"
-  >
-    ☰
-  </button>
-
-</nav>
-
-          {menuOpen && (
-  <div className="md:hidden fixed top-20 left-0 w-full bg-black/95 backdrop-blur-xl z-40 flex flex-col items-center py-8 gap-6">
+           {menuOpen && (
+           <div className="md:hidden fixed top-20 left-0 w-full bg-black/95 backdrop-blur-xl z-40 flex flex-col items-center py-8 gap-6">
 
     <Link to="/" onClick={() => setMenuOpen(false)}>
       Home
     </Link>
 
-    <Link to="/genres" onClick={() => setMenuOpen(false)}>
-      Genres
+    <Link to="/movies" onClick={() => setMenuOpen(false)}>
+     Movies
     </Link>
 
-    <Link to="/languages" onClick={() => setMenuOpen(false)}>
-      Languages
+     <Link to="/series" onClick={() => setMenuOpen(false)}>
+     Series
     </Link>
 
     <Link to="/moods" onClick={() => setMenuOpen(false)}>
@@ -348,7 +350,7 @@ if (featuredData?.id) {
 
 
           {/* HERO */}
-          <div className="min-h-screen flex items-center px-4 md:px-20 pt-20">
+          <div className="min-h-[75vh] md:min-h-screen flex items-center px-4 md:px-20 pt-12 md:pt-20 pb-10">
 
             <div className="max-w-4xl">
 
@@ -358,16 +360,33 @@ if (featuredData?.id) {
 
               <h1
                 ref={titleRef}
-                className="text-4xl sm:text-6xl md:text-[9rem] leading-[0.95] drop-shadow-2xl"
+                className="
+                 text-3xl
+                 sm:text-5xl
+                 md:text-[9rem]
+                 leading-[0.9]
+                 drop-shadow-2xl
+                 line-clamp-2
+                 max-w-[95%]
+                 "
                 style={{ fontFamily: "Anton" }}
               >
-                {featuredMovie?.title || "WATCH"}
+                 {featuredMovie?.title || featuredMovie?.name || "WATCH"}
                 </h1>
 
               <p
-  ref={subRef}
-  className="mt-6 text-gray-200 text-sm md:text-xl leading-relaxed max-w-2xl"
->
+                ref={subRef}
+                className="
+                mt-5
+                text-gray-200
+                text-sm
+                md:text-xl
+               leading-relaxed
+               max-w-2xl
+               line-clamp-4
+               md:line-clamp-none
+               "
+                >
   {featuredMovie?.overview ||
     "Discover movies tailored to your emotions."}
 </p>
@@ -391,33 +410,48 @@ if (featuredData?.id) {
 >
 
    <Link
-  to={`/movie/${featuredMovie?.id}`}
+  to={`/${featuredMovie?.media_type || "movie"}/${featuredMovie?.id}`}
   state={{ from: "/" }}
 >
 
-  <button className="px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold transition duration-300 hover:scale-105 shadow-2xl">
+  <button 
+className="
+px-7 py-3
+bg-white
+text-black
+rounded-full
+font-medium
+text-sm
+transition duration-300
+hover:bg-red-500
+hover:text-white
+"
+>
 
-    View Details
+View Details
+
+
+
 
   </button>
 
 </Link>
 
-
-  <button
-    onClick={scrollToMovies}
-    className="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full font-semibold hover:bg-white hover:text-black transition duration-300 hover:scale-105"
-  >
-
-    Browse Movies
-
-  </button>
-
-
   <Link to="/moods">
 
-    <button className="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full font-semibold hover:bg-white hover:text-black transition duration-300 hover:scale-105">
-
+    <button className="
+px-7 py-3
+bg-white/5
+backdrop-blur-xl
+border border-white/10
+text-white
+rounded-full
+font-medium
+text-sm
+transition duration-300
+hover:bg-white/10
+"
+>
       Choose Mood
 
     </button>
@@ -427,17 +461,19 @@ if (featuredData?.id) {
   <button
   onClick={() => setIsMuted(!isMuted)}
   className="
-    w-14 h-14
-    rounded-full
-    border border-white/20
-    bg-white/10 backdrop-blur-md
-    flex items-center justify-center
-    hover:bg-red-500
-    transition duration-300
-  "
+w-10 h-10
+rounded-full
+bg-black/40
+backdrop-blur-xl
+border border-white/10
+flex items-center justify-center
+text-white
+transition duration-300
+hover:bg-white/10
+"
 >
 
-  {isMuted ? "🔇" : "🔊"}
+  {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
 
 </button>
 
@@ -456,74 +492,6 @@ if (featuredData?.id) {
         ref={moviesRef}
         className="relative z-30 bg-black px-8 md:px-16 py-24"
       >
-
-        {/* SEARCH */}
-        <div className="mb-20 relative">
-
-          <input
-
-          
-            type="text"
-            placeholder="Search movies..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full md:w-[550px] px-7 py-5 bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-full text-white outline-none text-lg shadow-2xl focus:border-red-500 transition duration-300"
-          />
-          {search.trim() !== "" && (
-
-  <div className="mt-6 bg-zinc-900 rounded-[2rem] overflow-hidden border border-white/10 max-w-3xl">
-
-    {searchResults.length > 0 ? (
-
-   searchResults.slice(0, 8).map((movie) => (
-
-  <Link
-    to={`/movie/${movie.id}`}
-    key={movie.id}
-    className="flex items-center gap-5 p-4 hover:bg-white/5 transition duration-300 border-b border-white/5"
-  >
-
-    <img
-      src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
-      alt={movie.title}
-      className="w-16 h-24 object-cover rounded-xl"
-    />
-
-    <div>
-
-      <h3 className="text-xl font-semibold text-white">
-        {movie.title}
-      </h3>
-
-      <p className="text-gray-400 mt-1">
-        {movie.release_date?.slice(0, 4)}
-      </p>
-
-      <p className="text-red-400 mt-1">
-        ⭐ {movie.vote_average?.toFixed(1)}
-      </p>
-
-    </div>
-
-  </Link>
-
-))
-
-) : (
-
-  <div className="p-8 text-center text-gray-400">
-
-    No movies found.
-
-  </div>
-
-)}
-
-</div>
-
-)}
-
-        </div>
 
 
         <MovieRow
@@ -577,11 +545,27 @@ if (featuredData?.id) {
 
 function App() {
 
+  const [showIntro, setShowIntro] = useState(true)
+
+useEffect(() => {
+
+const timer = setTimeout(() => {
+
+setShowIntro(false)
+
+}, 4000)
+
+return () => clearTimeout(timer)
+
+}, [])
+
   return (
 
     <>
 
       <ScrollRestoration />
+
+      {showIntro && <IntroAnimation />}
 
       <Routes>
 
@@ -601,6 +585,16 @@ function App() {
           element={<GenreMovies />}
         />
 
+        <Route
+           path="/movies"
+           element={<Movies />}
+        />
+
+        <Route
+  path="/series"
+  element={<Series />}
+/>
+
         <Route path="/moods" element={<Moods />} />
 
         <Route
@@ -608,10 +602,10 @@ function App() {
           element={<MoodMovies />}
         />
 
-        <Route
-          path="/movie/:id"
-          element={<MovieDetails />}
-        />
+         <Route
+  path="/:type/:id"
+  element={<MovieDetails />}
+/>
 
       </Routes>
 
