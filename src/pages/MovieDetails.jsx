@@ -66,47 +66,36 @@ video.site === "YouTube" &&
 
 })
 
-const trailerData =
+ const trailerData =
 
 filteredVideos.find(
-
 (video) =>
-
 video.type === "Trailer" &&
 video.name?.toLowerCase().includes("official")
-
 )
 
 ||
 
 filteredVideos.find(
-
 (video) =>
-
 video.type === "Trailer"
-
 )
 
 ||
 
 filteredVideos.find(
-
 (video) =>
-
 video.type === "Teaser"
-
 )
 
 ||
 
 filteredVideos.find(
-
 (video) =>
-
 video.type === "Clip"
-
 )
-    setTrailer(trailerData)
+
+setTrailer(trailerData)
 
     const providerResponse = await axios.get(
       `https://api.themoviedb.org/3/${type}/${id}/watch/providers?api_key=9919aac47cec3e307e57789106fe5797`
@@ -126,24 +115,34 @@ video.type === "Clip"
 
     setProviderLink(regionData?.link || "")
 
-    const similarResponse = await axios.get(
+     let similarMovies = []
+
+try {
+
+const similarResponse = await axios.get(
 `https://api.themoviedb.org/3/${type}/${id}/similar?api_key=9919aac47cec3e307e57789106fe5797`
 )
 
-let similarMovies =
+similarMovies =
 (similarResponse.data.results || []).filter(
 item => item.poster_path
 )
 
+} catch (err) {
+
+console.log("SIMILAR ERROR:", err)
+
+}
+
 if (similarMovies.length === 0) {
 
 const genreIds =
-response.data.genres
+(response.data.genres || [])
 .map(g => g.id)
 .join(",")
 
 const language =
-response.data.original_language
+response.data.original_language || "en"
 
 const fallbackResponse = await axios.get(
 
@@ -195,6 +194,8 @@ similarMovies.slice(0, 12)
 
   }, [id, type])
 
+  console.log(movie)
+
   if (!movie) {
 
     return (
@@ -231,8 +232,11 @@ bg-no-repeat
 window.innerWidth < 768
 ? "center top"
 : "center",
-          backgroundImage:
-            `url(https://image.tmdb.org/t/p/original${movie.backdrop_path})`,
+          backgroundImage: movie.backdrop_path
+
+? `url(https://image.tmdb.org/t/p/w1280${movie.backdrop_path})`
+
+: `url(https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop)`,
         }}
       >
 
@@ -289,7 +293,13 @@ window.innerWidth < 768
         <div>
 
           <img
-            src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+            src={
+movie.poster_path
+
+? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+
+: "https://via.placeholder.com/500x750?text=No+Image"
+}
             alt={movie.title || movie.name}
             className="rounded-[2rem] w-full shadow-2xl"
           />
@@ -312,7 +322,7 @@ window.innerWidth < 768
           {/* GENRES */}
           <div className="flex flex-wrap gap-4 mt-10">
 
-            {movie.genres.map((genre) => (
+           {(movie.genres || []).map((genre) => (
 
               <div
                 key={genre.id}

@@ -236,7 +236,7 @@ return (data.results || [])
 
 }
 
- export const fetchJapaneseMovies = async () => {
+export const fetchJapaneseMovies = async () => {
 
 const movieData = await getData(
 "/discover/movie?with_original_language=ja&page=1"
@@ -246,33 +246,40 @@ const tvData = await getData(
 "/discover/tv?with_original_language=ja&page=1"
 )
 
-const all = [
+ const all = [
 
-...(movieData.results || []),
-...(tvData.results || [])
+...(movieData.results || []).map(item => ({
+...item,
+media_type: "movie"
+})),
+
+...(tvData.results || []).map(item => ({
+...item,
+media_type: "tv"
+}))
 
 ]
 
- const today = new Date()
+const unique = []
 
-const filtered = all.filter(item => {
+const ids = new Set()
 
-const releaseDate = new Date(
-item.release_date || item.first_air_date
-)
+for (const item of all) {
 
-return (
+if (
 item.poster_path &&
-releaseDate > today
-)
+!ids.has(item.id)
+) {
 
-})
+ids.add(item.id)
 
-const shuffled = filtered.sort(
-() => 0.5 - Math.random()
-)
+unique.push(item)
 
-return shuffled.slice(0, 12)
+}
+
+}
+
+return unique.slice(0, 12)
 
 }
 
@@ -290,8 +297,15 @@ const tvData = await getData(
 
 const all = [
 
-...(movieData.results || []),
-...(tvData.results || [])
+...(movieData.results || []).map(item => ({
+...item,
+media_type: "movie"
+})),
+
+...(tvData.results || []).map(item => ({
+...item,
+media_type: "tv"
+}))
 
 ]
 
