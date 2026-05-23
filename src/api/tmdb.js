@@ -35,7 +35,7 @@ export const fetchTrendingMovies = async () => {
 let movies = []
 let series = []
 
-for (let page = 1; page <= 5; page++) {
+for (let page = 1; page <= 2; page++) {
 
 const movieData =
 await getData(
@@ -78,44 +78,26 @@ return combined
 
 export const fetchTopRatedMovies = async () => {
 
-let all = []
-
-for (let page = 1; page <= 5; page++) {
-
 const data = await getData(
-`/movie/top_rated?page=${page}`
+"/movie/top_rated?page=1"
 )
 
-all = [
-...all,
-...data.results
-]
-
-}
-
-return all
+return (data.results || [])
+.filter(movie => movie.poster_path)
+.slice(0, 12)
 
 }
 
 
 export const fetchPopularMovies = async () => {
 
-let all = []
-
-for (let page = 1; page <= 5; page++) {
-
 const data = await getData(
-`/movie/popular?page=${page}`
+`/movie/popular?page=${Math.floor(Math.random() * 5) + 1}`
 )
 
-all = [
-...all,
-...data.results
-]
-
-}
-
-return all
+return (data.results || [])
+.filter(movie => movie.poster_path)
+.slice(0, 12)
 
 }
 
@@ -124,31 +106,60 @@ export const fetchPopularSeries = async () => {
   return data.results
 }
 
- export const fetchUpcomingMovies = async () => {
+export const fetchUpcomingMovies = async () => {
 
-let all = []
-
-for (let page = 1; page <= 10; page++) {
-
-const movieData = await getData(
-`/movie/upcoming?page=${page}`
+const upcoming1 = await getData(
+"/movie/upcoming?page=1"
 )
 
-const tvData = await getData(
-`/tv/on_the_air?page=${page}`
+const upcoming2 = await getData(
+"/movie/upcoming?page=2"
 )
 
-all = [
-...all,
-...(movieData.results || []),
-...(tvData.results || [])
+const popular = await getData(
+"/movie/popular?page=1"
+)
+
+ 
+
+const all = [
+
+...(upcoming1.results || []),
+...(upcoming2.results || []),
+...(popular.results || []),
+ 
+
 ]
+
+const unique = []
+
+const ids = new Set()
+
+for (const movie of all) {
+
+if (
+movie.poster_path &&
+!ids.has(movie.id)
+) {
+
+ids.add(movie.id)
+
+unique.push(movie)
 
 }
 
-return all.filter(
-item => item.poster_path
-)
+}
+
+for (let i = unique.length - 1; i > 0; i--) {
+
+const j = Math.floor(Math.random() * (i + 1))
+
+;[unique[i], unique[j]] =
+[unique[j], unique[i]]
+
+}
+
+return unique.slice(0, 12)
 
 }
 
@@ -188,115 +199,106 @@ export const fetchHorrorMovies = async () => {
 
 export const fetchIndianMovies = async () => {
 
-let all = []
+const langs = ["hi", "te", "ta"]
 
-const langs = [
-"hi",
-"te",
-"ta",
-"ml",
-"kn"
-]
+let all = []
 
 for (const lang of langs) {
 
-for (let page = 1; page <= 5; page++) {
-
 const data = await getData(
-`/discover/movie?with_original_language=${lang}&sort_by=popularity.desc&page=${page}`
+`/discover/movie?with_original_language=${lang}&sort_by=popularity.desc&page=1`
 )
 
 all = [
 ...all,
-...data.results
-]
-
-}
-
-}
-
-return all
-
-}
-
-
-
-export const fetchKoreanMovies=async()=>{
-
-let all = []
-
-for (let page = 1; page <= 5; page++) {
-
-const data = await getData(
-`/discover/movie?with_original_language=ko&page=${page}`
-)
-
-all = [
-...all,
-...data.results
+...(data.results || [])
 ]
 
 }
 
 return all
+.filter(movie => movie.poster_path)
+.slice(0, 12)
+
+}
+
+
+
+ export const fetchKoreanMovies = async () => {
+
+const data = await getData(
+"/discover/movie?with_original_language=ko&page=1"
+)
+
+return (data.results || [])
+.filter(movie => movie.poster_path)
+.slice(0, 12)
 
 }
 
  export const fetchJapaneseMovies = async () => {
 
-let all = []
-
-for (let page = 1; page <= 10; page++) {
-
 const movieData = await getData(
-`/discover/movie?with_original_language=ja&page=${page}`
+"/discover/movie?with_original_language=ja&page=1"
 )
 
 const tvData = await getData(
-`/discover/tv?with_original_language=ja&page=${page}`
+"/discover/tv?with_original_language=ja&page=1"
 )
 
-all = [
-...all,
+const all = [
+
 ...(movieData.results || []),
 ...(tvData.results || [])
+
 ]
 
-}
+ const today = new Date()
 
-return all.filter(
-item => item.poster_path
+const filtered = all.filter(item => {
+
+const releaseDate = new Date(
+item.release_date || item.first_air_date
 )
 
+return (
+item.poster_path &&
+releaseDate > today
+)
+
+})
+
+const shuffled = filtered.sort(
+() => 0.5 - Math.random()
+)
+
+return shuffled.slice(0, 12)
+
 }
 
 
 
- export const fetchAnimeMovies = async () => {
-
-let all = []
-
-for (let page = 1; page <= 10; page++) {
+export const fetchAnimeMovies = async () => {
 
 const movieData = await getData(
-`/discover/movie?with_genres=16&page=${page}`
+"/discover/movie?with_genres=16&page=1"
 )
 
 const tvData = await getData(
-`/discover/tv?with_genres=16&page=${page}`
+"/discover/tv?with_genres=16&page=1"
 )
 
-all = [
-...all,
+const all = [
+
 ...(movieData.results || []),
 ...(tvData.results || [])
-]
 
-}
+]
 
 return all
 .filter(item => item.poster_path)
 .sort((a, b) => b.popularity - a.popularity)
+.slice(0, 12)
 
 }
 
